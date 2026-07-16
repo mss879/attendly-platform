@@ -39,7 +39,7 @@ const STATIONS = [
     wash: "radial-gradient(120% 120% at 100% 100%, rgba(251,146,60,0.35) 0%, rgba(255,255,255,0) 55%)",
     node: "left-[32.5%] top-[20.625%] md:left-[25%]",
     wrap: "left-0 right-0 top-[20.625%] pt-9 md:left-[30%] md:right-auto md:w-[34%] md:-translate-y-1/2 md:pt-0",
-    ghost: "-top-16 right-0 md:-left-12 md:-top-24",
+    ghost: "-top-16 left-4 z-20 md:-top-20 md:left-auto md:right-full md:mr-8 md:z-10",
   },
   {
     badge: "Step 2",
@@ -49,7 +49,7 @@ const STATIONS = [
     wash: "radial-gradient(120% 120% at 100% 100%, rgba(245,158,11,0.28) 0%, rgba(255,255,255,0) 55%)",
     node: "left-[67.5%] top-[50%] md:left-[75%]",
     wrap: "left-0 right-0 top-[50%] pt-9 md:left-auto md:right-[30%] md:w-[34%] md:-translate-y-1/2 md:pt-0",
-    ghost: "-top-16 left-0 md:-right-12 md:-top-24",
+    ghost: "-top-16 right-4 z-20 md:-top-20 md:right-auto md:left-full md:ml-8 md:z-10",
   },
   {
     badge: "Step 3",
@@ -59,7 +59,7 @@ const STATIONS = [
     wash: "radial-gradient(120% 120% at 100% 100%, rgba(234,88,12,0.25) 0%, rgba(255,255,255,0) 55%)",
     node: "left-[32.5%] top-[79.375%] md:left-[25%]",
     wrap: "left-0 right-0 top-[79.375%] pt-9 md:left-[30%] md:right-auto md:w-[34%] md:-translate-y-1/2 md:pt-0",
-    ghost: "-top-16 right-0 md:-left-12 md:-top-24",
+    ghost: "-top-16 left-4 z-20 md:-top-20 md:left-auto md:right-full md:mr-8 md:z-10",
   },
 ];
 
