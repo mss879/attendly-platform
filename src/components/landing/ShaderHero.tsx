@@ -204,7 +204,7 @@ export function ShaderHero() {
           </span>
         </div>
 
-        <p className="hero-cta mt-5 text-xs font-bold text-black/80">
+        <p className="hero-cta mt-12 text-xs font-bold text-black/80">
           No apps to install · No printouts · Verified payments before every ticket
         </p>
       </div>
