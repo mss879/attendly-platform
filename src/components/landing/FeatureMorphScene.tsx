@@ -94,12 +94,12 @@ function seatFormation(): Float32Array {
   for (let i = 0; i < COUNT; i++) {
     if (i < stageCount) {
       // Stage: Curved arc boundary at the bottom
-      const ang = (i / stageCount) * Math.PI + jitter(0.02);
-      const rx = 1.45 + jitter(0.04);
-      const ry = 0.45 + jitter(0.04);
+      const ang = (i / stageCount) * Math.PI + jitter(0.015);
+      const rx = 1.45 + jitter(0.025);
+      const ry = 0.45 + jitter(0.025);
       a[i * 3] = Math.cos(ang) * rx;
       a[i * 3 + 1] = -2.15 - Math.sin(ang) * ry;
-      a[i * 3 + 2] = jitter(0.05);
+      a[i * 3 + 2] = jitter(0.03);
     } else {
       // Seating Grandstand rows
       const seatIdx = (i - stageCount) % (ROWS * SEATS);
@@ -109,9 +109,9 @@ function seatFormation(): Float32Array {
       
       // Aisle gap dividing the grandstand into left/right blocks
       const aisle = s >= 20 ? 0.18 : 0;
-      a[i * 3] = t * (2.1 + r * 0.05) + aisle + jitter(0.05);
-      a[i * 3 + 1] = -1.6 + r * 0.23 + t * t * 0.42 + jitter(0.05);
-      a[i * 3 + 2] = -r * 0.08 + jitter(0.03);
+      a[i * 3] = t * (2.1 + r * 0.05) + aisle + jitter(0.02);
+      a[i * 3 + 1] = -1.6 + r * 0.23 + t * t * 0.42 + jitter(0.02);
+      a[i * 3 + 2] = -r * 0.08 + jitter(0.01);
     }
   }
   return a;
@@ -175,30 +175,30 @@ function slipFormation(): Float32Array {
     if (u < 0.35) {
       // Slip border card
       [x, y] = roundedRectPoint((u / 0.35 + Math.random() * 0.002) % 1, 3.1, 4.1, 0.4);
-      x += jitter(0.05);
-      y += jitter(0.05);
+      x += jitter(0.025);
+      y += jitter(0.025);
     } else if (u < 0.6) {
       // Invoice rows of text
       const line = LINES[i % LINES.length];
       const t = Math.random();
-      x = line[1] + (line[2] - line[1]) * t + jitter(0.03);
-      y = line[0] + jitter(0.04);
+      x = line[1] + (line[2] - line[1]) * t + jitter(0.015);
+      y = line[0] + jitter(0.015);
     } else if (u < 0.72) {
       // Barcode strips at the bottom
       const bar = barcodeX[i % barcodeX.length];
       const t = Math.random();
-      x = bar + jitter(0.015);
+      x = bar + jitter(0.008);
       y = -1.6 + t * 0.45;
     } else {
       // Verified badge checkmark
       const seg = CHECK[Math.random() < 0.42 ? 0 : 1];
       const t = Math.random();
-      x = seg[0] + (seg[2] - seg[0]) * t + jitter(0.07);
-      y = seg[1] + (seg[3] - seg[1]) * t + jitter(0.07);
+      x = seg[0] + (seg[2] - seg[0]) * t + jitter(0.035);
+      y = seg[1] + (seg[3] - seg[1]) * t + jitter(0.035);
     }
     a[i * 3] = x;
     a[i * 3 + 1] = y;
-    a[i * 3 + 2] = jitter(0.1);
+    a[i * 3 + 2] = jitter(0.05);
   }
   return a;
 }
@@ -247,9 +247,9 @@ function qrFormation(): Float32Array {
   const c = 0.19; // scale factor
   for (let i = 0; i < COUNT; i++) {
     const [gx, gy] = cells[i % cells.length];
-    a[i * 3] = (gx - 10) * c + jitter(c * 0.72);
-    a[i * 3 + 1] = (10 - gy) * c + jitter(c * 0.72);
-    a[i * 3 + 2] = jitter(0.08);
+    a[i * 3] = (gx - 10) * c + jitter(c * 0.38);
+    a[i * 3 + 1] = (10 - gy) * c + jitter(c * 0.38);
+    a[i * 3 + 2] = jitter(0.04);
   }
   return a;
 }
@@ -266,27 +266,27 @@ function gateFormation(): Float32Array {
     const u = i / COUNT;
     let x: number;
     let y: number;
-    let z = jitter(0.08);
+    let z = jitter(0.05);
     if (u < 0.38) {
       // Circle scanner ring
-      const ang = (u / 0.38) * Math.PI * 2 + jitter(0.015);
-      const rad = RING + jitter(0.06);
+      const ang = (u / 0.38) * Math.PI * 2 + jitter(0.008);
+      const rad = RING + jitter(0.025);
       x = Math.cos(ang) * rad;
       y = Math.sin(ang) * rad;
     } else if (u < 0.65) {
       // Central success checkmark
       const seg = CHECK[Math.random() < 0.4 ? 0 : 1];
       const t = Math.random();
-      x = seg[0] + (seg[2] - seg[0]) * t + jitter(0.05);
-      y = seg[1] + (seg[3] - seg[1]) * t + jitter(0.05);
+      x = seg[0] + (seg[2] - seg[0]) * t + jitter(0.025);
+      y = seg[1] + (seg[3] - seg[1]) * t + jitter(0.025);
     } else {
       // Radiating rays spoke burst
       const spoke = i % 32;
-      const ang = (spoke / 32) * Math.PI * 2 + jitter(0.015);
+      const ang = (spoke / 32) * Math.PI * 2 + jitter(0.008);
       const rad = 2.15 + Math.pow(Math.random(), 1.3) * 1.35;
       x = Math.cos(ang) * rad;
       y = Math.sin(ang) * rad;
-      z = jitter(0.22);
+      z = jitter(0.12);
     }
     a[i * 3] = x;
     a[i * 3 + 1] = y;
@@ -316,7 +316,7 @@ function spriteTexture(): THREE.CanvasTexture {
   const ctx = c.getContext("2d")!;
   const grad = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
   grad.addColorStop(0, "rgba(255,255,255,1)");
-  grad.addColorStop(0.4, "rgba(255,255,255,0.65)");
+  grad.addColorStop(0.72, "rgba(255,255,255,0.85)"); // wider, more solid core
   grad.addColorStop(1, "rgba(255,255,255,0)");
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, 64, 64);
@@ -373,7 +373,7 @@ export default function FeatureMorphScene() {
     ];
     for (let i = 0; i < COUNT; i++) {
       rands[i] = Math.random();
-      sizes[i] = 2.5 + Math.random() * 3.5;
+      sizes[i] = 4.8 + Math.random() * 5.2; // larger particles to overlap and feel semi-solid
       const roll = Math.random();
       const c = palette[roll < 0.48 ? 0 : roll < 0.74 ? 1 : 2];
       colors[i * 3] = c.r;
