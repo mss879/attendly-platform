@@ -148,7 +148,7 @@ export function HowItWorksEvent({
   }, []);
 
   return (
-    <section ref={ref} id="how-it-works" className="scroll-mt-8 px-4 py-16 sm:px-7 sm:py-24">
+    <section ref={ref} id="how-it-works" className="scroll-mt-24 px-4 py-16 sm:px-7 sm:py-24">
       <div className="how-head mx-auto max-w-2xl text-center">
         <p className="text-[11px] font-semibold uppercase tracking-wider text-orange-700">
           How it works

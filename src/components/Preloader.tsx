@@ -3,37 +3,32 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import gsap from "gsap";
 
-const SESSION_KEY = "attendly:preloader-shown";
-
 // Runs after hydration but before the browser paints, so skipping never
 // flashes the overlay. (Plain useEffect on the server build.)
 const useIsomorphicLayoutEffect =
   typeof window === "undefined" ? useEffect : useLayoutEffect;
 
 /**
- * Gate: plays the boarding-pass intro once per browser session. Repeat
- * mounts (client-side navigations, dev refreshes) and reduced-motion
- * visitors skip straight to the page. The overlay itself is a child
- * component so hiding it unmounts everything — WebGL loop, intervals and
- * the scroll lock are all torn down for good.
+ * Gate: plays the boarding-pass intro on every refresh/load of the frontend.
+ * Repeat mounts via client-side routing are skipped using a window flag.
+ * Disabled entirely on the admin console pages.
  */
 export function Preloader({ onComplete }: { onComplete?: () => void }) {
   const [visible, setVisible] = useState(true);
 
   useIsomorphicLayoutEffect(() => {
+    const isAdminPath = window.location.pathname.startsWith("/admin");
+    const isShownThisLoad = (window as any).__preloaderShown === true;
     const skip =
-      window.sessionStorage.getItem(SESSION_KEY) === "1" ||
+      isAdminPath ||
+      isShownThisLoad ||
       window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (skip) {
       setVisible(false);
       onComplete?.();
       return;
     }
-    try {
-      window.sessionStorage.setItem(SESSION_KEY, "1");
-    } catch {
-      // Storage unavailable (private mode) — the intro just replays.
-    }
+    (window as any).__preloaderShown = true;
   }, []);
 
   if (!visible) return null;

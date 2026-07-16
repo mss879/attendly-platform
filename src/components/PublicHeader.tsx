@@ -99,13 +99,13 @@ export function PublicHeader({ active }: { active?: "events" | "host" }) {
     <div
       aria-hidden={!scrolled}
       inert={!scrolled}
-      className={`fixed inset-x-0 top-3 z-50 flex justify-center px-3 transition-all duration-500 ease-out ${
+      className={`fixed inset-x-0 top-0 z-50 border-b border-black/[0.06] bg-[#f7f4f0]/90 shadow-md backdrop-blur-xl transition-all duration-500 ease-out ${
         scrolled
           ? "translate-y-0 opacity-100"
           : "pointer-events-none -translate-y-[130%] opacity-0"
       }`}
     >
-      <div className="flex max-w-full flex-wrap items-center justify-center gap-x-4 gap-y-1 rounded-full bg-[#f7f4f0]/90 py-2.5 pl-5 pr-3 shadow-xl shadow-orange-950/15 ring-1 ring-white/60 backdrop-blur-xl sm:gap-x-8 sm:pl-6">
+      <div className="flex items-center justify-between gap-x-4 gap-y-1 px-4 py-2.5 sm:px-7">
         <Logo size="md" href="/" accent="orange" withMark />
         <NavLinks active={active} compact />
       </div>

@@ -44,8 +44,11 @@ export default async function HomePage() {
     <main className="flex flex-1 flex-col p-2">
       <AuroraBackground />
 
-      {/* Floating app panel, same shell as the admin dashboard */}
-      <div className="flex flex-1 flex-col rounded-2xl bg-[#f7f4f0]/90 shadow-2xl shadow-orange-950/20 ring-1 ring-white/50 backdrop-blur-xl sm:rounded-[28px]">
+      {/* Floating app panel backdrop (separated to avoid trapping sticky/fixed positioning) */}
+      <div className="fixed inset-2 z-0 rounded-2xl bg-[#f7f4f0]/90 shadow-2xl shadow-orange-950/20 ring-1 ring-white/50 backdrop-blur-xl sm:rounded-[28px]" />
+      
+      {/* App panel content */}
+      <div className="relative z-10 flex flex-1 flex-col sm:rounded-[28px]">
         {/* First screen: the hero carries its own nav and fills exactly one
             viewport (minus the 8px outer gap), so the next section begins
             right at the fold. */}

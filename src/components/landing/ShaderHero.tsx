@@ -134,7 +134,7 @@ export function ShaderHero() {
   return (
     <section
       ref={ref}
-      className="relative flex min-h-[calc(100svh_-_1rem)] flex-col overflow-hidden rounded-t-2xl text-center sm:rounded-t-[28px]"
+      className="relative flex h-[calc(100svh_-_1rem)] flex-col overflow-hidden rounded-t-2xl text-center sm:rounded-t-[28px]"
     >
       {/* CSS gradient fallback — always painted; the WebGL scene fades in above it */}
       <div
