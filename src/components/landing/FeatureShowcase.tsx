@@ -280,7 +280,7 @@ export function FeatureShowcase() {
   return (
     <div ref={ref} key={showAct ? "act" : "grid"}>
       {showAct ? (
-        <section ref={stageRef} id="features" className="relative h-[650svh] scroll-mt-24">
+        <section ref={stageRef} id="features" className="relative h-[400svh] scroll-mt-24">
           <div className="sticky top-0 flex h-svh items-center overflow-hidden w-full">
             {/* CSS wash fallback — always painted; the canvas fades in above */}
             <div
