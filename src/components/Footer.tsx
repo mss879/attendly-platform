@@ -8,7 +8,7 @@ export function Footer({ admin = false }: { admin?: boolean }) {
         <div className="flex items-center gap-1.5">
           <span>Attendly Admin</span>
           <span>·</span>
-          <span>Powered by</span>
+          <span>Built and Designed by</span>
           <a
             href="https://www.arcai.agency"
             target="_blank"
@@ -42,24 +42,8 @@ export function Footer({ admin = false }: { admin?: boolean }) {
         <div className="md:col-span-2 flex flex-col items-start gap-4">
           <Logo size="sm" href="/" accent="orange" withMark />
           <p className="text-sm text-slate-600 max-w-sm mt-1 leading-relaxed">
-            Attendly is the smart, modern event ticketing platform powered by ARC AI. Enjoy interactive seat maps, bank-transfer payment verification, and seamless check-ins.
+            Attendly is a smart, modern event ticketing platform. Enjoy interactive seat maps, bank-transfer payment verification, and seamless check-ins.
           </p>
-          <div className="flex items-center gap-2 mt-2">
-            <span className="text-xs uppercase tracking-wider font-bold text-slate-400">Powered by</span>
-            <a
-              href="https://www.arcai.agency"
-              target="_blank"
-              rel="noopener"
-              className="inline-flex items-center hover:opacity-80 transition-opacity"
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/arc-logo.png"
-                alt="ARC AI Logo"
-                className="h-5 w-auto object-contain"
-              />
-            </a>
-          </div>
         </div>
 
         {/* Column 1: Explore */}
@@ -125,17 +109,22 @@ export function Footer({ admin = false }: { admin?: boolean }) {
       {/* Bottom Row */}
       <div className="mt-12 pt-8 border-t border-black/[0.04] flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-semibold text-slate-400">
         <p>© {new Date().getFullYear()} Attendly. All rights reserved.</p>
-        <p className="flex items-center gap-1">
-          Made with <span className="text-orange-500">✦</span> by{" "}
+        <div className="flex items-center gap-1.5 text-slate-400">
+          <span>Built and Designed by</span>
           <a
             href="https://www.arcai.agency"
             target="_blank"
             rel="noopener"
-            className="hover:text-orange-600 transition-colors"
+            className="inline-flex items-center hover:opacity-80 transition-opacity"
           >
-            ARC AI
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/arc-logo.png"
+              alt="ARC AI Logo"
+              className="h-5 w-auto object-contain"
+            />
           </a>
-        </p>
+        </div>
       </div>
     </footer>
   );
