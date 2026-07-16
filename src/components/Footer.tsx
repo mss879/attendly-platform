@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export function Footer({ admin = false }: { admin?: boolean }) {
   return (
-    <footer className="flex flex-col items-center justify-center gap-2 pt-6 pb-4 text-[11px] font-bold uppercase tracking-wider text-black">
+    <footer className="relative z-10 flex flex-col items-center justify-center gap-2 pt-6 pb-4 text-[11px] font-bold uppercase tracking-wider text-black">
       <div className="flex flex-wrap items-center justify-center gap-1">
         <span>{admin ? "Attendly Admin" : "Attendly"}</span>
         <span>·</span>
