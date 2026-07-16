@@ -128,6 +128,8 @@ function StatStrip() {
 
 export function FeatureShowcase() {
   const ref = useRef<HTMLDivElement>(null);
+  const stageRef = useRef<HTMLElement>(null);
+  const headlineRef = useRef<HTMLHeadingElement>(null);
   // Server snapshot is "reduced", so no-JS visitors keep the static grid.
   const showAct = !usePrefersReducedMotion();
 
@@ -141,28 +143,33 @@ export function FeatureShowcase() {
       let disposed = false;
 
       const ctx = gsap.context(() => {
-        const stage = root.querySelector<HTMLElement>("#features");
+        const stage = stageRef.current;
         if (!stage) return;
 
-        gsap.from(".morph-kicker", {
-          y: 14,
-          autoAlpha: 0,
-          duration: 0.5,
-          ease: "power3.out",
-          clearProps: "all",
-          scrollTrigger: { trigger: stage, start: "top 75%", once: true },
-        });
+        const kicker = stage.querySelector<HTMLElement>(".morph-kicker");
+        if (kicker) {
+          gsap.from(kicker, {
+            y: 14,
+            autoAlpha: 0,
+            duration: 0.5,
+            ease: "power3.out",
+            clearProps: "all",
+            scrollTrigger: { trigger: stage, start: "top 75%", once: true },
+          });
+        }
 
         const mm = gsap.matchMedia();
         mm.add({ desktop: "(min-width: 640px)", mobile: "(max-width: 639px)" }, (mctx) => {
           const desktop = mctx.conditions?.desktop === true;
           const slide = desktop ? 40 : 24;
-          const blocks = gsap.utils.toArray<HTMLElement>(".morph-copy");
-          const dots = gsap.utils.toArray<HTMLElement>(".morph-dot");
+          const blocks = gsap.utils.toArray<HTMLElement>(stage.querySelectorAll(".morph-copy"));
+          const dots = gsap.utils.toArray<HTMLElement>(stage.querySelectorAll(".morph-dot"));
+          const railFill = stage.querySelector<HTMLElement>(".morph-rail-fill");
+          const morphHead = stage.querySelector<HTMLElement>(".morph-head");
 
           gsap.set(blocks.slice(1), { autoAlpha: 0, y: slide });
           if (dots[0]) gsap.set(dots[0], { backgroundColor: "#ea580c", scale: 1.5 });
-          gsap.set(".morph-rail-fill", { scaleX: 0 });
+          if (railFill) gsap.set(railFill, { scaleX: 0 });
 
           // One scrubbed timeline over the outer 400svh section. Its 0..3
           // time axis mirrors the scene's uProgress: copy block i peaks
@@ -175,7 +182,9 @@ export function FeatureShowcase() {
               scrub: 0.6,
             },
           });
-          tl.to(".morph-rail-fill", { scaleX: 1, duration: 3, ease: "none" }, 0);
+          if (railFill) {
+            tl.to(railFill, { scaleX: 1, duration: 3, ease: "none" }, 0);
+          }
           blocks.forEach((el, i) => {
             if (i > 0) {
               tl.to(el, { autoAlpha: 1, y: 0, duration: 0.3, ease: "power2.out" }, i - 0.36);
@@ -191,8 +200,8 @@ export function FeatureShowcase() {
           });
 
           // Desktop only: the headline drifts up slightly through the act.
-          if (desktop) {
-            tl.to(".morph-head", { yPercent: -14, ease: "none", duration: 3 }, 0);
+          if (desktop && morphHead) {
+            tl.to(morphHead, { yPercent: -14, ease: "none", duration: 3 }, 0);
           }
         });
 
@@ -230,8 +239,8 @@ export function FeatureShowcase() {
       document.fonts.ready.then(() => {
         if (disposed) return;
         ctx.add(() => {
-          const headline = root.querySelector<HTMLElement>(".morph-headline");
-          const stage = root.querySelector<HTMLElement>("#features");
+          const headline = headlineRef.current;
+          const stage = stageRef.current;
           if (!headline || !stage) return;
           split = SplitText.create(headline, { type: "words", mask: "words", aria: "auto" });
           // bg-clip-text doesn't survive splitting — re-apply per word.
@@ -269,9 +278,9 @@ export function FeatureShowcase() {
   }, [showAct]);
 
   return (
-    <div ref={ref}>
+    <div ref={ref} key={showAct ? "act" : "grid"}>
       {showAct ? (
-        <section id="features" className="relative h-[400svh] scroll-mt-24">
+        <section ref={stageRef} id="features" className="relative h-[400svh] scroll-mt-24">
           <div className="sticky top-0 flex h-svh items-center overflow-hidden w-full">
             {/* CSS wash fallback — always painted; the canvas fades in above */}
             <div
@@ -296,7 +305,7 @@ export function FeatureShowcase() {
                   <p className="morph-kicker text-[11px] font-semibold uppercase tracking-wider text-orange-700">
                     What Attendly does
                   </p>
-                  <h2 className="morph-headline mt-3 text-[clamp(2rem,4vw,3.25rem)] font-bold leading-[1.08] tracking-tight text-black">
+                  <h2 ref={headlineRef} className="morph-headline mt-3 text-[clamp(2rem,4vw,3.25rem)] font-bold leading-[1.08] tracking-tight text-black">
                     From &ldquo;I want to go&rdquo;{" "}
                     <span className="morph-accent bg-gradient-to-r from-orange-600 via-orange-500 to-red-500 bg-clip-text text-transparent block lg:inline">
                       to &ldquo;you&rsquo;re in.&rdquo;
@@ -340,7 +349,7 @@ export function FeatureShowcase() {
           </div>
         </section>
       ) : (
-        <section id="features" className="scroll-mt-24 px-4 pb-4 pt-24 sm:px-7 sm:pt-32">
+        <section ref={stageRef} id="features" className="scroll-mt-24 px-4 pb-4 pt-24 sm:px-7 sm:pt-32">
           <div className="mx-auto max-w-2xl text-center">
             <p className="text-[11px] font-semibold uppercase tracking-wider text-orange-700">
               What Attendly does
