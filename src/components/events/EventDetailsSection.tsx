@@ -4,6 +4,7 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Link from "next/link";
 import { useEffect, useRef } from "react";
+import { runWhenPageVisible } from "@/lib/motion";
 import type { ScheduleItem } from "@/lib/types";
 
 gsap.registerPlugin(ScrollTrigger);
@@ -37,34 +38,36 @@ export function EventDetailsSection({
     if (!ref.current) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
-    const ctx = gsap.context(() => {
-      gsap.fromTo(
-        ".event-head",
-        { y: 24, autoAlpha: 0 },
-        {
-          y: 0,
-          autoAlpha: 1,
-          duration: 0.7,
-          ease: "power3.out",
-          scrollTrigger: { trigger: ".event-head", start: "top 85%" },
-          clearProps: "all",
-        }
-      );
-      gsap.fromTo(
-        ".event-schedule > *",
-        { y: 18, autoAlpha: 0 },
-        {
-          y: 0,
-          autoAlpha: 1,
-          duration: 0.55,
-          stagger: 0.08,
-          ease: "power3.out",
-          scrollTrigger: { trigger: ".event-schedule", start: "top 88%" },
-          clearProps: "all",
-        }
-      );
-    }, ref);
-    return () => ctx.revert();
+    return runWhenPageVisible(() => {
+      const ctx = gsap.context(() => {
+        gsap.fromTo(
+          ".event-head",
+          { y: 24, autoAlpha: 0 },
+          {
+            y: 0,
+            autoAlpha: 1,
+            duration: 0.7,
+            ease: "power3.out",
+            scrollTrigger: { trigger: ".event-head", start: "top 85%" },
+            clearProps: "all",
+          }
+        );
+        gsap.fromTo(
+          ".event-schedule > *",
+          { y: 18, autoAlpha: 0 },
+          {
+            y: 0,
+            autoAlpha: 1,
+            duration: 0.55,
+            stagger: 0.08,
+            ease: "power3.out",
+            scrollTrigger: { trigger: ".event-schedule", start: "top 88%" },
+            clearProps: "all",
+          }
+        );
+      }, ref);
+      return () => ctx.revert();
+    });
   }, []);
 
   // Date + venue always lead the strip; the event's own rows follow.

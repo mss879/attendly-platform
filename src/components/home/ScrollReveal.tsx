@@ -3,6 +3,7 @@
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useEffect, useRef } from "react";
+import { runWhenPageVisible } from "@/lib/motion";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -20,17 +21,19 @@ export function ScrollReveal({
     if (!ref.current) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
-    const ctx = gsap.context(() => {
-      gsap.from(ref.current, {
-        y: 28,
-        autoAlpha: 0,
-        duration: 0.75,
-        ease: "power3.out",
-        scrollTrigger: { trigger: ref.current, start: "top 84%" },
-        clearProps: "all",
-      });
-    }, ref);
-    return () => ctx.revert();
+    return runWhenPageVisible(() => {
+      const ctx = gsap.context(() => {
+        gsap.from(ref.current, {
+          y: 28,
+          autoAlpha: 0,
+          duration: 0.75,
+          ease: "power3.out",
+          scrollTrigger: { trigger: ref.current, start: "top 84%" },
+          clearProps: "all",
+        });
+      }, ref);
+      return () => ctx.revert();
+    });
   }, []);
 
   return (

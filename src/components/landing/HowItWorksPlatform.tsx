@@ -5,6 +5,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { DrawSVGPlugin } from "gsap/DrawSVGPlugin";
 import Link from "next/link";
 import { useEffect, useRef } from "react";
+import { runWhenPageVisible } from "@/lib/motion";
 
 gsap.registerPlugin(ScrollTrigger, DrawSVGPlugin);
 
@@ -63,98 +64,100 @@ export function HowItWorksPlatform() {
     if (!ref.current) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
-    const ctx = gsap.context(() => {
-      gsap.from(".how-head", {
-        y: 24,
-        autoAlpha: 0,
-        duration: 0.7,
-        ease: "power3.out",
-        scrollTrigger: { trigger: ".how-head", start: "top 85%" },
-      });
+    return runWhenPageVisible(() => {
+      const ctx = gsap.context(() => {
+        gsap.from(".how-head", {
+          y: 24,
+          autoAlpha: 0,
+          duration: 0.7,
+          ease: "power3.out",
+          scrollTrigger: { trigger: ".how-head", start: "top 85%" },
+        });
 
-      // Progress line fills as the journey scrolls by. Scale only the axis
-      // the line runs along — scaling both would thin it during the scrub.
-      const lineScroll = {
-        trigger: ".how-steps",
-        start: "top 75%",
-        end: "bottom 55%",
-        scrub: 0.6,
-      };
-      const mm = gsap.matchMedia();
-      mm.add("(min-width: 640px)", () => {
-        gsap.fromTo(
-          ".how-line-fill",
-          { scaleX: 0, scaleY: 1 },
-          { scaleX: 1, ease: "none", scrollTrigger: lineScroll }
-        );
-      });
-      mm.add("(max-width: 639px)", () => {
-        const track = ref.current!.querySelector<HTMLElement>(".how-line-track");
-        const lastStep = ref.current!.querySelector<HTMLElement>(".how-step:last-child");
-        if (track && lastStep) {
-          track.style.bottom = `${Math.max(lastStep.offsetHeight - 26, 0)}px`;
-        }
-        gsap.fromTo(
-          ".how-line-fill",
-          { scaleY: 0, scaleX: 1 },
-          { scaleY: 1, ease: "none", scrollTrigger: lineScroll }
-        );
-        return () => {
-          if (track) track.style.bottom = "";
+        // Progress line fills as the journey scrolls by. Scale only the axis
+        // the line runs along — scaling both would thin it during the scrub.
+        const lineScroll = {
+          trigger: ".how-steps",
+          start: "top 75%",
+          end: "bottom 55%",
+          scrub: 0.6,
         };
-      });
+        const mm = gsap.matchMedia();
+        mm.add("(min-width: 640px)", () => {
+          gsap.fromTo(
+            ".how-line-fill",
+            { scaleX: 0, scaleY: 1 },
+            { scaleX: 1, ease: "none", scrollTrigger: lineScroll }
+          );
+        });
+        mm.add("(max-width: 639px)", () => {
+          const track = ref.current!.querySelector<HTMLElement>(".how-line-track");
+          const lastStep = ref.current!.querySelector<HTMLElement>(".how-step:last-child");
+          if (track && lastStep) {
+            track.style.bottom = `${Math.max(lastStep.offsetHeight - 26, 0)}px`;
+          }
+          gsap.fromTo(
+            ".how-line-fill",
+            { scaleY: 0, scaleX: 1 },
+            { scaleY: 1, ease: "none", scrollTrigger: lineScroll }
+          );
+          return () => {
+            if (track) track.style.bottom = "";
+          };
+        });
 
-      gsap.utils.toArray<HTMLElement>(".how-step").forEach((card) => {
-        const trigger = { trigger: card, start: "top 82%" };
-        gsap.fromTo(
-          card.querySelector(".step-card"),
-          { y: 34, autoAlpha: 0, scale: 0.96 },
-          {
-            y: 0,
-            autoAlpha: 1,
-            scale: 1,
-            duration: 0.7,
-            ease: "power3.out",
-            scrollTrigger: trigger,
-            clearProps: "all",
-          }
-        );
-        gsap.fromTo(
-          card.querySelector(".step-num"),
-          { scale: 0.3, autoAlpha: 0 },
-          {
-            scale: 1,
-            autoAlpha: 1,
-            duration: 0.6,
-            delay: 0.1,
-            ease: "back.out(2)",
-            scrollTrigger: trigger,
-            clearProps: "all",
-          }
-        );
-        gsap.fromTo(
-          card.querySelectorAll(".step-draw"),
-          { drawSVG: "0%" },
-          {
-            drawSVG: "100%",
-            duration: 0.9,
-            delay: 0.25,
-            stagger: 0.12,
-            ease: "power2.inOut",
-            scrollTrigger: trigger,
-          }
-        );
-      });
+        gsap.utils.toArray<HTMLElement>(".how-step").forEach((card) => {
+          const trigger = { trigger: card, start: "top 82%" };
+          gsap.fromTo(
+            card.querySelector(".step-card"),
+            { y: 34, autoAlpha: 0, scale: 0.96 },
+            {
+              y: 0,
+              autoAlpha: 1,
+              scale: 1,
+              duration: 0.7,
+              ease: "power3.out",
+              scrollTrigger: trigger,
+              clearProps: "all",
+            }
+          );
+          gsap.fromTo(
+            card.querySelector(".step-num"),
+            { scale: 0.3, autoAlpha: 0 },
+            {
+              scale: 1,
+              autoAlpha: 1,
+              duration: 0.6,
+              delay: 0.1,
+              ease: "back.out(2)",
+              scrollTrigger: trigger,
+              clearProps: "all",
+            }
+          );
+          gsap.fromTo(
+            card.querySelectorAll(".step-draw"),
+            { drawSVG: "0%" },
+            {
+              drawSVG: "100%",
+              duration: 0.9,
+              delay: 0.25,
+              stagger: 0.12,
+              ease: "power2.inOut",
+              scrollTrigger: trigger,
+            }
+          );
+        });
 
-      gsap.from(".how-cta", {
-        y: 18,
-        autoAlpha: 0,
-        duration: 0.6,
-        ease: "power3.out",
-        scrollTrigger: { trigger: ".how-cta", start: "top 90%" },
-      });
-    }, ref);
-    return () => ctx.revert();
+        gsap.from(".how-cta", {
+          y: 18,
+          autoAlpha: 0,
+          duration: 0.6,
+          ease: "power3.out",
+          scrollTrigger: { trigger: ".how-cta", start: "top 90%" },
+        });
+      }, ref);
+      return () => ctx.revert();
+    });
   }, []);
 
   return (

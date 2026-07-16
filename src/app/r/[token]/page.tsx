@@ -81,7 +81,7 @@ export default async function PortalPage({
   const pricePerSeat = event.seating.pricePerSeat;
 
   return (
-    <main className="flex flex-1 flex-col p-2 sm:p-4 lg:p-6">
+    <main className="flex flex-1 flex-col p-2">
       <AuroraBackground />
 
       {/* Floating app panel, same shell as the admin dashboard */}

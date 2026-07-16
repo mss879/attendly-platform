@@ -4,6 +4,7 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { DrawSVGPlugin } from "gsap/DrawSVGPlugin";
 import { useEffect, useRef } from "react";
+import { runWhenPageVisible } from "@/lib/motion";
 
 gsap.registerPlugin(ScrollTrigger, DrawSVGPlugin);
 
@@ -113,89 +114,91 @@ export function FeatureShowcase() {
     if (!ref.current) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
-    const ctx = gsap.context(() => {
-      gsap.from(".feat-head", {
-        y: 24,
-        autoAlpha: 0,
-        duration: 0.7,
-        ease: "power3.out",
-        scrollTrigger: { trigger: ".feat-head", start: "top 85%" },
-      });
+    return runWhenPageVisible(() => {
+      const ctx = gsap.context(() => {
+        gsap.from(".feat-head", {
+          y: 24,
+          autoAlpha: 0,
+          duration: 0.7,
+          ease: "power3.out",
+          scrollTrigger: { trigger: ".feat-head", start: "top 85%" },
+        });
 
-      gsap.utils.toArray<HTMLElement>(".feat-card").forEach((card, i) => {
-        const trigger = { trigger: card, start: "top 85%" };
-        gsap.fromTo(
-          card,
-          { y: 40, autoAlpha: 0, scale: 0.96 },
-          {
-            y: 0,
-            autoAlpha: 1,
-            scale: 1,
-            duration: 0.7,
-            delay: (i % 3) * 0.08,
-            ease: "power3.out",
-            scrollTrigger: trigger,
-            clearProps: "all",
-          }
-        );
-        gsap.fromTo(
-          card.querySelectorAll(".feat-draw"),
-          { drawSVG: "0%" },
-          {
-            drawSVG: "100%",
-            duration: 0.9,
-            delay: 0.2 + (i % 3) * 0.08,
-            stagger: 0.1,
-            ease: "power2.inOut",
-            scrollTrigger: trigger,
-          }
-        );
-      });
-
-      // Depth: alternate columns drift at slightly different speeds.
-      const mm = gsap.matchMedia();
-      mm.add("(min-width: 640px)", () => {
         gsap.utils.toArray<HTMLElement>(".feat-card").forEach((card, i) => {
-          gsap.to(card, {
-            yPercent: i % 2 ? -4 : 4,
-            ease: "none",
-            scrollTrigger: {
-              trigger: ".feat-grid",
-              start: "top bottom",
-              end: "bottom top",
-              scrub: 0.8,
+          const trigger = { trigger: card, start: "top 85%" };
+          gsap.fromTo(
+            card,
+            { y: 40, autoAlpha: 0, scale: 0.96 },
+            {
+              y: 0,
+              autoAlpha: 1,
+              scale: 1,
+              duration: 0.7,
+              delay: (i % 3) * 0.08,
+              ease: "power3.out",
+              scrollTrigger: trigger,
+              clearProps: "all",
+            }
+          );
+          gsap.fromTo(
+            card.querySelectorAll(".feat-draw"),
+            { drawSVG: "0%" },
+            {
+              drawSVG: "100%",
+              duration: 0.9,
+              delay: 0.2 + (i % 3) * 0.08,
+              stagger: 0.1,
+              ease: "power2.inOut",
+              scrollTrigger: trigger,
+            }
+          );
+        });
+
+        // Depth: alternate columns drift at slightly different speeds.
+        const mm = gsap.matchMedia();
+        mm.add("(min-width: 640px)", () => {
+          gsap.utils.toArray<HTMLElement>(".feat-card").forEach((card, i) => {
+            gsap.to(card, {
+              yPercent: i % 2 ? -4 : 4,
+              ease: "none",
+              scrollTrigger: {
+                trigger: ".feat-grid",
+                start: "top bottom",
+                end: "bottom top",
+                scrub: 0.8,
+              },
+            });
+          });
+        });
+
+        // Stat counters count up once when the strip scrolls in.
+        gsap.utils.toArray<HTMLElement>(".feat-stat-num").forEach((el) => {
+          const end = Number(el.dataset.value ?? "0");
+          const suffix = el.dataset.suffix ?? "";
+          const counter = { n: 0 };
+          gsap.to(counter, {
+            n: end,
+            duration: 1.4,
+            ease: "power2.out",
+            scrollTrigger: { trigger: ".feat-stats", start: "top 88%" },
+            onUpdate: () => {
+              el.textContent = `${Math.round(counter.n)}${suffix}`;
             },
           });
         });
-      });
 
-      // Stat counters count up once when the strip scrolls in.
-      gsap.utils.toArray<HTMLElement>(".feat-stat-num").forEach((el) => {
-        const end = Number(el.dataset.value ?? "0");
-        const suffix = el.dataset.suffix ?? "";
-        const counter = { n: 0 };
-        gsap.to(counter, {
-          n: end,
-          duration: 1.4,
-          ease: "power2.out",
+        gsap.from(".feat-stats > *", {
+          y: 20,
+          autoAlpha: 0,
+          duration: 0.55,
+          stagger: 0.08,
+          ease: "power3.out",
           scrollTrigger: { trigger: ".feat-stats", start: "top 88%" },
-          onUpdate: () => {
-            el.textContent = `${Math.round(counter.n)}${suffix}`;
-          },
+          clearProps: "all",
         });
-      });
-
-      gsap.from(".feat-stats > *", {
-        y: 20,
-        autoAlpha: 0,
-        duration: 0.55,
-        stagger: 0.08,
-        ease: "power3.out",
-        scrollTrigger: { trigger: ".feat-stats", start: "top 88%" },
-        clearProps: "all",
-      });
-    }, ref);
-    return () => ctx.revert();
+      }, ref);
+      return () => ctx.revert();
+    });
   }, []);
 
   return (

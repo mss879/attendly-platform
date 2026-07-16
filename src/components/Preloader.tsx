@@ -1,14 +1,65 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import gsap from "gsap";
 
+const SESSION_KEY = "attendly:preloader-shown";
+
+// Runs after hydration but before the browser paints, so skipping never
+// flashes the overlay. (Plain useEffect on the server build.)
+const useIsomorphicLayoutEffect =
+  typeof window === "undefined" ? useEffect : useLayoutEffect;
+
+/**
+ * Gate: plays the boarding-pass intro once per browser session. Repeat
+ * mounts (client-side navigations, dev refreshes) and reduced-motion
+ * visitors skip straight to the page. The overlay itself is a child
+ * component so hiding it unmounts everything — WebGL loop, intervals and
+ * the scroll lock are all torn down for good.
+ */
 export function Preloader({ onComplete }: { onComplete?: () => void }) {
+  const [visible, setVisible] = useState(true);
+
+  useIsomorphicLayoutEffect(() => {
+    const skip =
+      window.sessionStorage.getItem(SESSION_KEY) === "1" ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (skip) {
+      setVisible(false);
+      onComplete?.();
+      return;
+    }
+    try {
+      window.sessionStorage.setItem(SESSION_KEY, "1");
+    } catch {
+      // Storage unavailable (private mode) — the intro just replays.
+    }
+  }, []);
+
+  if (!visible) return null;
+  return (
+    <PreloaderOverlay
+      onDone={() => {
+        setVisible(false);
+        onComplete?.();
+      }}
+    />
+  );
+}
+
+function PreloaderOverlay({ onDone }: { onDone: () => void }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [mounted, setMounted] = useState(true);
   const [progress, setProgress] = useState(0);
   const [statusText, setStatusText] = useState("Initializing Scanner...");
+
+  // Failsafe: if anything interrupts the outro (throttled tab, GSAP kill),
+  // force-dismiss so the page can never stay locked behind the overlay.
+  useEffect(() => {
+    const failsafe = setTimeout(onDone, 7000);
+    return () => clearTimeout(failsafe);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Progress and status simulation
   useEffect(() => {
@@ -29,7 +80,7 @@ export function Preloader({ onComplete }: { onComplete?: () => void }) {
         setStatusText("Reading Ticket...");
       }
       setProgress(start);
-    }, 100);
+    }, 80);
 
     return () => clearInterval(interval);
   }, []);
@@ -213,9 +264,8 @@ export function Preloader({ onComplete }: { onComplete?: () => void }) {
           // Explicitly unlock scrolling once doors are open
           document.documentElement.style.overflow = "";
           document.body.style.overflow = "";
-          
-          setMounted(false);
-          if (onComplete) onComplete();
+
+          onDone();
         },
       });
 
@@ -280,9 +330,8 @@ export function Preloader({ onComplete }: { onComplete?: () => void }) {
     }, containerRef);
 
     return () => ctx.revert();
-  }, [progress, onComplete]);
-
-  if (!mounted) return null;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [progress]);
 
   return (
     <div
@@ -342,7 +391,7 @@ export function Preloader({ onComplete }: { onComplete?: () => void }) {
         <div className="flex justify-between items-start border-b border-orange-950/10 pb-4">
           <div className="text-left">
             <span className="text-[9px] font-bold uppercase tracking-widest text-black">
-              Boarding Pass
+              Event Ticket
             </span>
             <h2 className="text-xl font-black tracking-tighter text-black leading-none mt-1">
               ATTENDLY

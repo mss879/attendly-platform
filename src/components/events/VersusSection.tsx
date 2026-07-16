@@ -3,6 +3,7 @@
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useEffect, useRef } from "react";
+import { runWhenPageVisible } from "@/lib/motion";
 import type { EventTeam } from "@/lib/types";
 
 gsap.registerPlugin(ScrollTrigger);
@@ -57,79 +58,81 @@ export function VersusSection({ edition, heading, home, away, tagline }: VersusS
     if (!ref.current) return;
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-    const ctx = gsap.context(() => {
-      if (reduceMotion) {
-        gsap.set(".sword-left", { rotation: -28 });
-        gsap.set(".sword-right", { rotation: 28 });
-        return;
-      }
+    return runWhenPageVisible(() => {
+      const ctx = gsap.context(() => {
+        if (reduceMotion) {
+          gsap.set(".sword-left", { rotation: -28 });
+          gsap.set(".sword-right", { rotation: 28 });
+          return;
+        }
 
-      const enter = { trigger: ".rivalry-arena", start: "top 75%" };
+        const enter = { trigger: ".rivalry-arena", start: "top 75%" };
 
-      gsap.from(".rivalry-head", {
-        y: 26,
-        autoAlpha: 0,
-        duration: 0.7,
-        ease: "power3.out",
-        scrollTrigger: { trigger: ref.current, start: "top 80%" },
-      });
+        gsap.from(".rivalry-head", {
+          y: 26,
+          autoAlpha: 0,
+          duration: 0.7,
+          ease: "power3.out",
+          scrollTrigger: { trigger: ref.current, start: "top 80%" },
+        });
 
-      // Entrance: crests charge in from the sides, swords rise, VS pops.
-      const entrance = gsap.timeline({
-        scrollTrigger: enter,
-        defaults: { ease: "power3.out" },
-      });
-      entrance
-        .from(".crest-left", { x: -110, autoAlpha: 0, rotation: -8, duration: 0.9 })
-        .from(".crest-right", { x: 110, autoAlpha: 0, rotation: 8, duration: 0.9 }, "<")
-        .from(".sword-left", { rotation: 40, y: 60, autoAlpha: 0, duration: 0.6 }, "-=0.4")
-        .from(".sword-right", { rotation: -40, y: 60, autoAlpha: 0, duration: 0.6 }, "<")
-        .to(".sword-left", { rotation: -28, duration: 0.25, ease: "power4.in" })
-        .to(".sword-right", { rotation: 28, duration: 0.25, ease: "power4.in" }, "<")
-        .from(".rivalry-vs", { scale: 0, autoAlpha: 0, duration: 0.5, ease: "back.out(2.2)" }, "-=0.1")
-        .from(
-          ".rivalry-word",
-          { yPercent: 120, duration: 0.6, stagger: 0.09, clearProps: "all" },
-          "-=0.15"
-        );
+        // Entrance: crests charge in from the sides, swords rise, VS pops.
+        const entrance = gsap.timeline({
+          scrollTrigger: enter,
+          defaults: { ease: "power3.out" },
+        });
+        entrance
+          .from(".crest-left", { x: -110, autoAlpha: 0, rotation: -8, duration: 0.9 })
+          .from(".crest-right", { x: 110, autoAlpha: 0, rotation: 8, duration: 0.9 }, "<")
+          .from(".sword-left", { rotation: 40, y: 60, autoAlpha: 0, duration: 0.6 }, "-=0.4")
+          .from(".sword-right", { rotation: -40, y: 60, autoAlpha: 0, duration: 0.6 }, "<")
+          .to(".sword-left", { rotation: -28, duration: 0.25, ease: "power4.in" })
+          .to(".sword-right", { rotation: 28, duration: 0.25, ease: "power4.in" }, "<")
+          .from(".rivalry-vs", { scale: 0, autoAlpha: 0, duration: 0.5, ease: "back.out(2.2)" }, "-=0.1")
+          .from(
+            ".rivalry-word",
+            { yPercent: 120, duration: 0.6, stagger: 0.09, clearProps: "all" },
+            "-=0.15"
+          );
 
-      // Battle loop: swords wind up, slam together, sparks fly, crests lunge.
-      const clash = gsap.timeline({
-        repeat: -1,
-        repeatDelay: 2.4,
-        delay: 2.2,
-        scrollTrigger: { ...enter, toggleActions: "play pause resume pause" },
-      });
-      clash
-        .to(".sword-left", { rotation: -55, duration: 0.35, ease: "power2.out" })
-        .to(".sword-right", { rotation: 55, duration: 0.35, ease: "power2.out" }, "<")
-        .to(".sword-left", { rotation: -22, duration: 0.14, ease: "power4.in" })
-        .to(".sword-right", { rotation: 22, duration: 0.14, ease: "power4.in" }, "<")
-        .fromTo(
-          ".clash-flash",
-          { scale: 0.4, autoAlpha: 0.9 },
-          { scale: 1.9, autoAlpha: 0, duration: 0.45, ease: "power2.out" }
-        )
-        .fromTo(
-          ".clash-spark",
-          { x: 0, y: 0, scale: 1, autoAlpha: 1 },
-          {
-            x: (i) => Math.cos((i / 8) * Math.PI * 2) * (46 + (i % 3) * 16),
-            y: (i) => Math.sin((i / 8) * Math.PI * 2) * (36 + (i % 3) * 14),
-            scale: 0.2,
-            autoAlpha: 0,
-            duration: 0.55,
-            ease: "power3.out",
-          },
-          "<"
-        )
-        .to(".crest-left", { x: 16, rotation: 3, duration: 0.12, yoyo: true, repeat: 1, ease: "power2.inOut" }, "<")
-        .to(".crest-right", { x: -16, rotation: -3, duration: 0.12, yoyo: true, repeat: 1, ease: "power2.inOut" }, "<")
-        .to(".rivalry-arena", { y: 3, duration: 0.05, yoyo: true, repeat: 5, ease: "none" }, "<")
-        .to(".sword-left", { rotation: -28, duration: 0.5, ease: "elastic.out(1, 0.5)" }, "+=0.1")
-        .to(".sword-right", { rotation: 28, duration: 0.5, ease: "elastic.out(1, 0.5)" }, "<");
-    }, ref);
-    return () => ctx.revert();
+        // Battle loop: swords wind up, slam together, sparks fly, crests lunge.
+        const clash = gsap.timeline({
+          repeat: -1,
+          repeatDelay: 2.4,
+          delay: 2.2,
+          scrollTrigger: { ...enter, toggleActions: "play pause resume pause" },
+        });
+        clash
+          .to(".sword-left", { rotation: -55, duration: 0.35, ease: "power2.out" })
+          .to(".sword-right", { rotation: 55, duration: 0.35, ease: "power2.out" }, "<")
+          .to(".sword-left", { rotation: -22, duration: 0.14, ease: "power4.in" })
+          .to(".sword-right", { rotation: 22, duration: 0.14, ease: "power4.in" }, "<")
+          .fromTo(
+            ".clash-flash",
+            { scale: 0.4, autoAlpha: 0.9 },
+            { scale: 1.9, autoAlpha: 0, duration: 0.45, ease: "power2.out" }
+          )
+          .fromTo(
+            ".clash-spark",
+            { x: 0, y: 0, scale: 1, autoAlpha: 1 },
+            {
+              x: (i) => Math.cos((i / 8) * Math.PI * 2) * (46 + (i % 3) * 16),
+              y: (i) => Math.sin((i / 8) * Math.PI * 2) * (36 + (i % 3) * 14),
+              scale: 0.2,
+              autoAlpha: 0,
+              duration: 0.55,
+              ease: "power3.out",
+            },
+            "<"
+          )
+          .to(".crest-left", { x: 16, rotation: 3, duration: 0.12, yoyo: true, repeat: 1, ease: "power2.inOut" }, "<")
+          .to(".crest-right", { x: -16, rotation: -3, duration: 0.12, yoyo: true, repeat: 1, ease: "power2.inOut" }, "<")
+          .to(".rivalry-arena", { y: 3, duration: 0.05, yoyo: true, repeat: 5, ease: "none" }, "<")
+          .to(".sword-left", { rotation: -28, duration: 0.5, ease: "elastic.out(1, 0.5)" }, "+=0.1")
+          .to(".sword-right", { rotation: 28, duration: 0.5, ease: "elastic.out(1, 0.5)" }, "<");
+      }, ref);
+      return () => ctx.revert();
+    });
   }, []);
 
   return (

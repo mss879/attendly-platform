@@ -4,6 +4,7 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Link from "next/link";
 import { useEffect, useRef } from "react";
+import { runWhenPageVisible } from "@/lib/motion";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -24,27 +25,29 @@ export function HostCta() {
     if (!ref.current) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
-    const ctx = gsap.context(() => {
-      gsap.from(".host-reveal", {
-        y: 28,
-        autoAlpha: 0,
-        duration: 0.7,
-        stagger: 0.1,
-        ease: "power3.out",
-        scrollTrigger: { trigger: ref.current, start: "top 75%" },
-        clearProps: "all",
-      });
-      // Slow breathing glow behind the panel content.
-      gsap.to(".host-glow", {
-        opacity: 0.75,
-        scale: 1.15,
-        duration: 3.2,
-        ease: "sine.inOut",
-        yoyo: true,
-        repeat: -1,
-      });
-    }, ref);
-    return () => ctx.revert();
+    return runWhenPageVisible(() => {
+      const ctx = gsap.context(() => {
+        gsap.from(".host-reveal", {
+          y: 28,
+          autoAlpha: 0,
+          duration: 0.7,
+          stagger: 0.1,
+          ease: "power3.out",
+          scrollTrigger: { trigger: ref.current, start: "top 75%" },
+          clearProps: "all",
+        });
+        // Slow breathing glow behind the panel content.
+        gsap.to(".host-glow", {
+          opacity: 0.75,
+          scale: 1.15,
+          duration: 3.2,
+          ease: "sine.inOut",
+          yoyo: true,
+          repeat: -1,
+        });
+      }, ref);
+      return () => ctx.revert();
+    });
   }, []);
 
   return (

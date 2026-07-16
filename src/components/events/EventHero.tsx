@@ -3,6 +3,7 @@
 import gsap from "gsap";
 import Link from "next/link";
 import { Fragment, useEffect, useRef } from "react";
+import { runWhenPageVisible } from "@/lib/motion";
 import { Countdown } from "./Countdown";
 
 // Hero for the generic event page: masked-rise event name, live countdown,
@@ -55,24 +56,26 @@ export function EventHero({
     if (!ref.current) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
-    const ctx = gsap.context(() => {
-      const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
-      tl.from(".hero-badge", { y: 16, autoAlpha: 0, duration: 0.5, clearProps: "all" })
-        .from(
-          ".hero-word",
-          { yPercent: 120, duration: 0.8, stagger: 0.06, clearProps: "all" },
-          "-=0.25"
-        )
-        .from(".hero-sub", { y: 18, autoAlpha: 0, duration: 0.6, clearProps: "all" }, "-=0.45")
-        .from(
-          ".hero-meta",
-          { y: 14, autoAlpha: 0, duration: 0.5, stagger: 0.07, clearProps: "all" },
-          "-=0.35"
-        )
-        .from(".hero-count", { y: 20, autoAlpha: 0, scale: 0.96, duration: 0.6, clearProps: "all" }, "-=0.3")
-        .from(".hero-cta", { y: 14, autoAlpha: 0, duration: 0.5, stagger: 0.08, clearProps: "all" }, "-=0.3");
-    }, ref);
-    return () => ctx.revert();
+    return runWhenPageVisible(() => {
+      const ctx = gsap.context(() => {
+        const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
+        tl.from(".hero-badge", { y: 16, autoAlpha: 0, duration: 0.5, clearProps: "all" })
+          .from(
+            ".hero-word",
+            { yPercent: 120, duration: 0.8, stagger: 0.06, clearProps: "all" },
+            "-=0.25"
+          )
+          .from(".hero-sub", { y: 18, autoAlpha: 0, duration: 0.6, clearProps: "all" }, "-=0.45")
+          .from(
+            ".hero-meta",
+            { y: 14, autoAlpha: 0, duration: 0.5, stagger: 0.07, clearProps: "all" },
+            "-=0.35"
+          )
+          .from(".hero-count", { y: 20, autoAlpha: 0, scale: 0.96, duration: 0.6, clearProps: "all" }, "-=0.3")
+          .from(".hero-cta", { y: 14, autoAlpha: 0, duration: 0.5, stagger: 0.08, clearProps: "all" }, "-=0.3");
+      }, ref);
+      return () => ctx.revert();
+    });
   }, []);
 
   return (

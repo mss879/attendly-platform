@@ -2,6 +2,7 @@
 
 import gsap from "gsap";
 import { useEffect, useRef } from "react";
+import { runWhenPageVisible } from "@/lib/motion";
 
 /**
  * GSAP entrance wrapper: fades + slides its content up on mount.
@@ -24,19 +25,21 @@ export function FadeIn({
     if (!ref.current) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
-    const ctx = gsap.context(() => {
-      const targets = stagger ? Array.from(ref.current!.children) : ref.current!;
-      gsap.from(targets, {
-        y: 18,
-        opacity: 0,
-        duration: 0.65,
-        delay,
-        ease: "power3.out",
-        stagger: stagger ? 0.07 : 0,
-        clearProps: "all",
-      });
-    }, ref);
-    return () => ctx.revert();
+    return runWhenPageVisible(() => {
+      const ctx = gsap.context(() => {
+        const targets = stagger ? Array.from(ref.current!.children) : ref.current!;
+        gsap.from(targets, {
+          y: 18,
+          opacity: 0,
+          duration: 0.65,
+          delay,
+          ease: "power3.out",
+          stagger: stagger ? 0.07 : 0,
+          clearProps: "all",
+        });
+      }, ref);
+      return () => ctx.revert();
+    });
   }, [stagger, delay]);
 
   return (

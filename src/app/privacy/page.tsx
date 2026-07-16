@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 
 export default function PrivacyPage() {
   return (
-    <main className="flex flex-1 flex-col p-2 sm:p-4 lg:p-6">
+    <main className="flex flex-1 flex-col p-2">
       <AuroraBackground />
 
       <div className="flex flex-1 flex-col rounded-2xl bg-[#f7f4f0]/90 shadow-2xl shadow-orange-950/20 ring-1 ring-white/50 backdrop-blur-xl sm:rounded-[28px]">

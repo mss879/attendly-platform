@@ -19,7 +19,7 @@ export default async function EventAdminLayout({
   const { user, event } = await requireEventAccess(eventId);
 
   return (
-    <div className="flex min-h-screen flex-col p-2 sm:p-4 lg:p-6">
+    <div className="flex min-h-screen flex-col p-2">
       <AuroraBackground />
 
       {/* Floating app panel */}
