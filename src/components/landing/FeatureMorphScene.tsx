@@ -20,7 +20,7 @@ gsap.registerPlugin(ScrollTrigger);
 //   * all morph math lives in the vertex shader — per frame the CPU only
 //     writes three uniforms
 
-const COUNT = 12000;
+const COUNT = 16000;
 
 const MORPH_VERT = /* glsl */ `
 attribute vec3 aP1;
@@ -82,30 +82,37 @@ void main() {
 }
 `;
 
-/** Deterministic QR-ish block pattern (1 = filled cell on a 12x12 grid). */
-const QR_CELLS: ReadonlyArray<readonly [number, number]> = [
-  [4, 1], [6, 1], [8, 1], [5, 2], [9, 2], [4, 3], [7, 3],
-  [1, 4], [3, 4], [6, 4], [9, 4], [11, 4], [2, 5], [5, 5], [8, 5],
-  [1, 6], [4, 6], [7, 6], [10, 6], [3, 7], [6, 7], [9, 7],
-  [4, 8], [8, 8], [11, 8], [5, 9], [7, 9], [10, 9],
-  [4, 10], [6, 10], [9, 10], [11, 11], [5, 11], [8, 11],
-];
-
 const jitter = (amount: number) => (Math.random() - 0.5) * amount;
 
-/** Scene 0 — grandstand seat map: curved rows, one tight clump per seat. */
+/** Scene 0 — grandstand seat map: curved rows, stage at bottom, aisle gap. */
 function seatFormation(): Float32Array {
   const a = new Float32Array(COUNT * 3);
-  const ROWS = 14;
-  const SEATS = 32;
+  const stageCount = Math.floor(COUNT * 0.125); // 12.5% of particles for the stage
+  const ROWS = 16;
+  const SEATS = 40;
+
   for (let i = 0; i < COUNT; i++) {
-    const seat = i % (ROWS * SEATS);
-    const r = (seat / SEATS) | 0;
-    const s = seat % SEATS;
-    const t = (s / (SEATS - 1)) * 2 - 1;
-    a[i * 3] = t * (2.05 + r * 0.055) + jitter(0.07);
-    a[i * 3 + 1] = -1.95 + r * 0.27 + t * t * 0.5 + jitter(0.07);
-    a[i * 3 + 2] = -r * 0.1 + jitter(0.05);
+    if (i < stageCount) {
+      // Stage: Curved arc boundary at the bottom
+      const ang = (i / stageCount) * Math.PI + jitter(0.02);
+      const rx = 1.45 + jitter(0.04);
+      const ry = 0.45 + jitter(0.04);
+      a[i * 3] = Math.cos(ang) * rx;
+      a[i * 3 + 1] = -2.15 - Math.sin(ang) * ry;
+      a[i * 3 + 2] = jitter(0.05);
+    } else {
+      // Seating Grandstand rows
+      const seatIdx = (i - stageCount) % (ROWS * SEATS);
+      const r = (seatIdx / SEATS) | 0;
+      const s = seatIdx % SEATS;
+      const t = (s / (SEATS - 1)) * 2 - 1;
+      
+      // Aisle gap dividing the grandstand into left/right blocks
+      const aisle = s >= 20 ? 0.18 : 0;
+      a[i * 3] = t * (2.1 + r * 0.05) + aisle + jitter(0.05);
+      a[i * 3 + 1] = -1.6 + r * 0.23 + t * t * 0.42 + jitter(0.05);
+      a[i * 3 + 2] = -r * 0.08 + jitter(0.03);
+    }
   }
   return a;
 }
@@ -144,98 +151,142 @@ function roundedRectPoint(u: number, w: number, h: number, r: number): [number, 
   return [-sw / 2 + Math.cos(ang) * r, sh / 2 + Math.sin(ang) * r];
 }
 
-/** Scene 1 — payment slip: rounded-rect outline, text lines, big check. */
+/** Scene 1 — payment slip: rounded-rect outline, text lines, bottom barcode, verified check. */
 function slipFormation(): Float32Array {
   const a = new Float32Array(COUNT * 3);
   const LINES: ReadonlyArray<readonly [number, number, number]> = [
-    // [y, xStart, xEnd] — receipt text rows in the upper half
+    // [y, xStart, xEnd] — receipt text rows
     [1.35, -1.05, 0.85],
     [0.95, -1.05, 1.05],
     [0.55, -1.05, 0.55],
     [0.15, -1.05, 0.95],
+    [-0.25, -1.05, 0.75], // Extra text details row
   ];
-  // Check stroke: two segments, weighted by length.
   const CHECK: ReadonlyArray<readonly [number, number, number, number]> = [
-    [-0.85, -0.85, -0.2, -1.45],
-    [-0.2, -1.45, 1.0, -0.35],
+    [-0.85, -0.9, -0.2, -1.5],
+    [-0.2, -1.5, 1.0, -0.4],
   ];
+  const barcodeX = [-1.0, -0.85, -0.7, -0.6, -0.4, -0.2, 0.0, 0.15, 0.3, 0.5, 0.7, 0.85, 1.0];
+
   for (let i = 0; i < COUNT; i++) {
     const u = i / COUNT;
     let x: number;
     let y: number;
-    if (u < 0.36) {
-      [x, y] = roundedRectPoint((u / 0.36 + Math.random() * 0.002) % 1, 3.1, 4.1, 0.4);
-      x += jitter(0.06);
-      y += jitter(0.06);
-    } else if (u < 0.68) {
+    if (u < 0.35) {
+      // Slip border card
+      [x, y] = roundedRectPoint((u / 0.35 + Math.random() * 0.002) % 1, 3.1, 4.1, 0.4);
+      x += jitter(0.05);
+      y += jitter(0.05);
+    } else if (u < 0.6) {
+      // Invoice rows of text
       const line = LINES[i % LINES.length];
       const t = Math.random();
-      x = line[1] + (line[2] - line[1]) * t + jitter(0.04);
-      y = line[0] + jitter(0.05);
+      x = line[1] + (line[2] - line[1]) * t + jitter(0.03);
+      y = line[0] + jitter(0.04);
+    } else if (u < 0.72) {
+      // Barcode strips at the bottom
+      const bar = barcodeX[i % barcodeX.length];
+      const t = Math.random();
+      x = bar + jitter(0.015);
+      y = -1.6 + t * 0.45;
     } else {
+      // Verified badge checkmark
       const seg = CHECK[Math.random() < 0.42 ? 0 : 1];
       const t = Math.random();
-      x = seg[0] + (seg[2] - seg[0]) * t + jitter(0.09);
-      y = seg[1] + (seg[3] - seg[1]) * t + jitter(0.09);
+      x = seg[0] + (seg[2] - seg[0]) * t + jitter(0.07);
+      y = seg[1] + (seg[3] - seg[1]) * t + jitter(0.07);
     }
     a[i * 3] = x;
     a[i * 3 + 1] = y;
-    a[i * 3 + 2] = jitter(0.12);
-  }
-  return a;
-}
-
-/** Scene 2 — QR code: finder squares in three corners + data cells. */
-function qrFormation(): Float32Array {
-  const cells: Array<readonly [number, number]> = [];
-  for (const [fx, fy] of [[0, 0], [9, 0], [0, 9]] as const) {
-    for (let cx = 0; cx < 3; cx++) {
-      for (let cy = 0; cy < 3; cy++) cells.push([fx + cx, fy + cy]);
-    }
-  }
-  cells.push(...QR_CELLS);
-  const a = new Float32Array(COUNT * 3);
-  const c = 0.34;
-  for (let i = 0; i < COUNT; i++) {
-    const [gx, gy] = cells[i % cells.length];
-    a[i * 3] = (gx - 5.5) * c + jitter(c * 0.86);
-    a[i * 3 + 1] = (5.5 - gy) * c + jitter(c * 0.86);
     a[i * 3 + 2] = jitter(0.1);
   }
   return a;
 }
 
-/** Scene 3 — gate: ring + check, rays radiating outward along spokes. */
+/** Scene 2 — QR code: 21x21 standard grid with 3 corner finder patterns and realistic timing. */
+function qrFormation(): Float32Array {
+  const cells: Array<[number, number]> = [];
+  for (let r = 0; r < 21; r++) {
+    for (let c = 0; c < 21; c++) {
+      // Top-Left Finder Pattern
+      if (r < 7 && c < 7) {
+        if (r === 0 || r === 6 || c === 0 || c === 6 || (r >= 2 && r <= 4 && c >= 2 && c <= 4)) {
+          cells.push([c, r]);
+        }
+      }
+      // Top-Right Finder Pattern
+      else if (r < 7 && c >= 14) {
+        const c2 = c - 14;
+        if (r === 0 || r === 6 || c2 === 0 || c2 === 6 || (r >= 2 && r <= 4 && c2 >= 2 && c2 <= 4)) {
+          cells.push([c, r]);
+        }
+      }
+      // Bottom-Left Finder Pattern
+      else if (r >= 14 && c < 7) {
+        const r2 = r - 14;
+        if (r2 === 0 || r2 === 6 || c === 0 || c === 6 || (r2 >= 2 && r2 <= 4 && c === 2 && c <= 4)) {
+          cells.push([c, r]);
+        }
+      }
+      // Data modules & timing rows
+      else {
+        if (r === 6 || c === 6) {
+          if ((r + c) % 2 === 0) cells.push([c, r]);
+        } else {
+          // Deterministic data cell patterns
+          const hash = Math.sin(c * 12.9898 + r * 78.233) * 43758.5453;
+          if ((hash - Math.floor(hash)) < 0.46) {
+            cells.push([c, r]);
+          }
+        }
+      }
+    }
+  }
+
+  const a = new Float32Array(COUNT * 3);
+  const c = 0.19; // scale factor
+  for (let i = 0; i < COUNT; i++) {
+    const [gx, gy] = cells[i % cells.length];
+    a[i * 3] = (gx - 10) * c + jitter(c * 0.72);
+    a[i * 3 + 1] = (10 - gy) * c + jitter(c * 0.72);
+    a[i * 3 + 2] = jitter(0.08);
+  }
+  return a;
+}
+
+/** Scene 3 — gate: denser circular gate ring + central success checkmark + radiating radial spoke rays. */
 function gateFormation(): Float32Array {
   const a = new Float32Array(COUNT * 3);
-  const RING = 1.8;
+  const RING = 1.95;
   const CHECK: ReadonlyArray<readonly [number, number, number, number]> = [
-    [-0.8, -0.05, -0.22, -0.7],
-    [-0.22, -0.7, 0.9, 0.55],
+    [-0.75, -0.1, -0.22, -0.65],
+    [-0.22, -0.65, 0.85, 0.5],
   ];
   for (let i = 0; i < COUNT; i++) {
     const u = i / COUNT;
     let x: number;
     let y: number;
-    let z = jitter(0.14);
-    if (u < 0.4) {
-      const ang = (u / 0.4) * Math.PI * 2 + jitter(0.02);
-      const rad = RING + jitter(0.13);
+    let z = jitter(0.08);
+    if (u < 0.38) {
+      // Circle scanner ring
+      const ang = (u / 0.38) * Math.PI * 2 + jitter(0.015);
+      const rad = RING + jitter(0.06);
       x = Math.cos(ang) * rad;
       y = Math.sin(ang) * rad;
-    } else if (u < 0.66) {
+    } else if (u < 0.65) {
+      // Central success checkmark
       const seg = CHECK[Math.random() < 0.4 ? 0 : 1];
       const t = Math.random();
-      x = seg[0] + (seg[2] - seg[0]) * t + jitter(0.1);
-      y = seg[1] + (seg[3] - seg[1]) * t + jitter(0.1);
+      x = seg[0] + (seg[2] - seg[0]) * t + jitter(0.05);
+      y = seg[1] + (seg[3] - seg[1]) * t + jitter(0.05);
     } else {
-      const spoke = i % 28;
-      const ang = (spoke / 28) * Math.PI * 2 + jitter(0.05);
-      // Density tapers with distance so the rays feel like a burst.
-      const rad = 2.05 + Math.pow(Math.random(), 1.7) * 1.25;
+      // Radiating rays spoke burst
+      const spoke = i % 32;
+      const ang = (spoke / 32) * Math.PI * 2 + jitter(0.015);
+      const rad = 2.15 + Math.pow(Math.random(), 1.3) * 1.35;
       x = Math.cos(ang) * rad;
       y = Math.sin(ang) * rad;
-      z = jitter(0.35);
+      z = jitter(0.22);
     }
     a[i * 3] = x;
     a[i * 3 + 1] = y;
