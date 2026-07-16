@@ -272,11 +272,11 @@ export function FeatureShowcase() {
     <div ref={ref}>
       {showAct ? (
         <section id="features" className="relative h-[400svh] scroll-mt-24">
-          <div className="sticky top-0 flex h-svh flex-col overflow-hidden">
+          <div className="sticky top-0 flex h-svh items-center overflow-hidden w-full">
             {/* CSS wash fallback — always painted; the canvas fades in above */}
             <div
               aria-hidden
-              className="absolute inset-0"
+              className="absolute inset-0 md:left-0 md:right-auto md:w-1/2 md:h-full md:flex md:items-center md:justify-center"
               style={{
                 background:
                   "radial-gradient(80% 60% at 50% 58%, rgba(251,146,60,0.18) 0%, rgba(251,191,36,0.08) 45%, rgba(247,244,240,0) 75%)",
@@ -285,48 +285,56 @@ export function FeatureShowcase() {
               <FeatureMorphScene />
             </div>
 
-            {/* Act header */}
-            <div className="morph-head pointer-events-none relative z-10 mx-auto max-w-4xl px-4 pt-24 text-center sm:pt-32">
-              <p className="morph-kicker text-[11px] font-semibold uppercase tracking-wider text-orange-700">
-                What Attendly does
-              </p>
-              <h2 className="morph-headline mt-3 text-[clamp(2rem,5vw,3.75rem)] font-bold leading-[1.05] tracking-tight text-black">
-                From &ldquo;I want to go&rdquo;{" "}
-                <span className="morph-accent bg-gradient-to-r from-orange-600 via-orange-500 to-red-500 bg-clip-text text-transparent">
-                  to &ldquo;you&rsquo;re in.&rdquo;
-                </span>
-              </h2>
-            </div>
+            <div className="relative z-10 w-full h-full flex flex-col md:grid md:grid-cols-12 md:gap-12 items-center max-w-7xl mx-auto px-6 sm:px-8 py-12">
+              {/* Empty spacer column on desktop (left 50% of screen holds the canvas) */}
+              <div className="hidden md:block md:col-span-6" />
 
-            {/* Scene copy blocks, stacked and swapped by the scrub */}
-            <div className="pointer-events-none relative z-10 mt-auto pb-12 sm:pb-16">
-              <div className="relative mx-auto h-40 w-full max-w-xl text-center sm:h-36">
-                {SCENES.map((s, i) => (
-                  <div key={s.title} className="morph-copy absolute inset-x-4 top-0">
-                    <span
-                      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold ${s.pill}`}
-                    >
-                      <span className="font-mono">{`0${i + 1}`}</span>
-                      {s.badge}
+              {/* Content column (right 50% of screen holds the text on desktop) */}
+              <div className="col-span-12 md:col-span-6 flex flex-col justify-between md:justify-center h-full w-full py-8 md:py-24 text-center md:text-left">
+                {/* Act header */}
+                <div className="morph-head pointer-events-none relative w-full">
+                  <p className="morph-kicker text-[11px] font-semibold uppercase tracking-wider text-orange-700">
+                    What Attendly does
+                  </p>
+                  <h2 className="morph-headline mt-3 text-[clamp(2rem,4vw,3.25rem)] font-bold leading-[1.08] tracking-tight text-black">
+                    From &ldquo;I want to go&rdquo;{" "}
+                    <span className="morph-accent bg-gradient-to-r from-orange-600 via-orange-500 to-red-500 bg-clip-text text-transparent block lg:inline">
+                      to &ldquo;you&rsquo;re in.&rdquo;
                     </span>
-                    <h3 className="mt-3 text-2xl font-bold tracking-tight text-black sm:text-3xl">
-                      {s.title}
-                    </h3>
-                    <p className="mt-1.5 text-sm text-black sm:text-base">{s.line}</p>
-                  </div>
-                ))}
-              </div>
+                  </h2>
+                </div>
 
-              {/* Progress rail */}
-              <div aria-hidden className="relative mx-auto mt-3 h-px w-44 bg-black/10">
-                <div className="morph-rail-fill absolute inset-0 origin-left bg-orange-600" />
-                {SCENES.map((s, i) => (
-                  <span
-                    key={s.title}
-                    className="morph-dot absolute top-1/2 -ml-[5px] -mt-[5px] h-2.5 w-2.5 rounded-full bg-black/15"
-                    style={{ left: `${(i / (SCENES.length - 1)) * 100}%` }}
-                  />
-                ))}
+                {/* Scene copy blocks, stacked and swapped by the scrub */}
+                <div className="pointer-events-none relative mt-8 md:mt-10 w-full h-40">
+                  {SCENES.map((s, i) => (
+                    <div key={s.title} className="morph-copy absolute inset-x-0 top-0 text-center md:text-left">
+                      <span
+                        className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold ${s.pill}`}
+                      >
+                        <span className="font-mono">{`0${i + 1}`}</span>
+                        {s.badge}
+                      </span>
+                      <h3 className="mt-3 text-xl font-bold tracking-tight text-black sm:text-2xl lg:text-3xl">
+                        {s.title}
+                      </h3>
+                      <p className="mt-2 text-sm text-slate-700 sm:text-base leading-relaxed max-w-md mx-auto md:mx-0">
+                        {s.line}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Progress rail */}
+                <div aria-hidden className="relative mt-6 h-px w-44 bg-black/10 mx-auto md:mx-0">
+                  <div className="morph-rail-fill absolute inset-0 origin-left bg-orange-600" />
+                  {SCENES.map((s, i) => (
+                    <span
+                      key={s.title}
+                      className="morph-dot absolute top-1/2 -ml-[5px] -mt-[5px] h-2.5 w-2.5 rounded-full bg-black/15"
+                      style={{ left: `${(i / (SCENES.length - 1)) * 100}%` }}
+                    />
+                  ))}
+                </div>
               </div>
             </div>
           </div>
