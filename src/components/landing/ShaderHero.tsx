@@ -174,8 +174,8 @@ export function ShaderHero() {
         {/* Fluid type: scales with viewport height and width so the hero's
             content always fits one screen — short laptop windows included. */}
         <h1 className="mx-auto mt-4 max-w-4xl text-[clamp(2.25rem,min(8.5svh,10vw),4.5rem)] font-bold leading-[1.08] tracking-tight text-black">
-          <Word>Every</Word> <Word>event.</Word> <Word accent>One</Word>{" "}
-          <Word accent>ticket.</Word> <Word accent>One</Word> <Word accent>scan.</Word>
+          <Word>Host</Word> <Word>events.</Word> <Word accent>Sell</Word>{" "}
+          <Word accent>tickets.</Word> <Word accent>Scan</Word> <Word accent>in.</Word>
         </h1>
 
         <p className="hero-sub mx-auto mt-4 max-w-xl text-base text-black sm:text-lg">
