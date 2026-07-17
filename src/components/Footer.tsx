@@ -122,6 +122,8 @@ export function Footer({ admin = false }: { admin?: boolean }) {
             <img
               src="/arc-logo.png"
               alt="ARC AI Logo"
+              loading="lazy"
+              decoding="async"
               className="h-5 w-auto object-contain"
             />
           </a>

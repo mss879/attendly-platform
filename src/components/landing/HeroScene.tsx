@@ -257,7 +257,9 @@ export default function HeroScene() {
     try {
       renderer = new THREE.WebGLRenderer({
         canvas,
-        antialias: true,
+        // Phones: high-DPI panels already hide edge aliasing — skip the
+        // MSAA cost there. Desktop keeps it.
+        antialias: window.innerWidth >= 768,
         alpha: true,
         powerPreference: "high-performance",
       });
@@ -459,7 +461,9 @@ export default function HeroScene() {
     function resize() {
       const w = wrap!.clientWidth || 1;
       const h = wrap!.clientHeight || 1;
-      const dpr = Math.min(window.devicePixelRatio || 1, 1.75);
+      // Fill rate is the phone bottleneck: cap the backing store lower
+      // there — soft shader gradients and sprites hide the difference.
+      const dpr = Math.min(window.devicePixelRatio || 1, window.innerWidth < 768 ? 1.5 : 1.75);
       renderer.setPixelRatio(dpr);
       renderer.setSize(w, h, false);
       camera.aspect = w / h;

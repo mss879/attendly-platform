@@ -1,8 +1,14 @@
+import type { Metadata } from "next";
 import { EventsPreview } from "@/components/landing/EventsPreview";
 import type { EventRow } from "@/lib/types";
 
 // TEMPORARY dev-only harness to eyeball EventsPreview with mock data.
 // Delete this file — it must never ship.
+
+// Mock content must never reach Google's index.
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 function mockEvent(n: number): EventRow {
   return {

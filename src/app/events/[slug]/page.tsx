@@ -14,7 +14,15 @@ import { eventPhase, formatEventDate, formatEventTime } from "@/lib/event-time";
 import { formatLKR } from "@/lib/seating";
 import type { EventRow } from "@/lib/types";
 
-export const dynamic = "force-dynamic";
+// ISR: event pages are cached per slug and refreshed in the background.
+// (The booking page stays fully dynamic for live seat availability.)
+// generateStaticParams opts the route into static generation; slugs not
+// returned here are rendered on first request, then cached.
+export const revalidate = 60;
+
+export function generateStaticParams(): { slug: string }[] {
+  return [];
+}
 
 const SITE_URL = "https://www.attendly.buzz";
 

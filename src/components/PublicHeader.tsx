@@ -35,7 +35,23 @@ function useHydrated(): boolean {
   );
 }
 
-function NavLinks({ active, compact }: { active?: "events" | "host"; compact?: boolean }) {
+type ActiveNav = "events" | "host" | "guide";
+
+/** Phone-only contact action riding the right edge of the top bars. */
+function ContactButton({ compact = false }: { compact?: boolean }) {
+  return (
+    <a
+      href="mailto:hello@arcai.agency"
+      className={`whitespace-nowrap rounded-full bg-orange-600 font-bold text-white shadow-sm shadow-orange-600/30 transition-colors active:bg-orange-700 sm:hidden ${
+        compact ? "px-3 py-1 text-[11px]" : "px-3.5 py-1.5 text-xs"
+      }`}
+    >
+      Contact
+    </a>
+  );
+}
+
+function NavLinks({ active, compact }: { active?: ActiveNav; compact?: boolean }) {
   const linkBase = `whitespace-nowrap rounded-full font-semibold transition ${
     compact ? "px-2.5 py-1.5 text-xs sm:px-3 sm:text-sm" : "px-2.5 py-1.5 text-xs sm:px-3.5 sm:text-sm"
   }`;
@@ -123,8 +139,8 @@ const SIDE_TABS = [
     ),
   },
   {
-    key: "how",
-    href: "/#how-it-works",
+    key: "guide",
+    href: "/guide",
     label: "Guide",
     icon: (
       <TabIcon>
@@ -191,14 +207,14 @@ function SideTab({
  *  edge, Events as the raised hero action in the center. Portaled to
  *  <body> alongside the pill so the page's backdrop-blur panel can't trap
  *  its fixed position. */
-function MobileTabBar({ active }: { active?: "events" | "host" }) {
+function MobileTabBar({ active }: { active?: ActiveNav }) {
   const current = active ?? "home";
   return (
     <nav aria-label="Main" className="fixed inset-x-0 bottom-0 z-50 sm:hidden">
       <div className="rounded-t-3xl border-t border-white/70 bg-[#f7f4f0]/95 shadow-[0_-10px_36px_rgba(67,20,7,0.16)] backdrop-blur-xl">
         <div className="grid grid-cols-5 items-stretch pb-[max(env(safe-area-inset-bottom),0.25rem)]">
           <SideTab tab={SIDE_TABS[0]} selected={current === "home"} />
-          <SideTab tab={SIDE_TABS[1]} selected={false} />
+          <SideTab tab={SIDE_TABS[1]} selected={current === "guide"} />
 
           {/* Center hero action: Events */}
           <Link
@@ -242,7 +258,7 @@ function MobileTabBar({ active }: { active?: "events" | "host" }) {
   );
 }
 
-export function PublicHeader({ active }: { active?: "events" | "host" }) {
+export function PublicHeader({ active }: { active?: ActiveNav }) {
   const scrolled = useScrolled(80);
   const hydrated = useHydrated();
 
@@ -256,13 +272,15 @@ export function PublicHeader({ active }: { active?: "events" | "host" }) {
           : "pointer-events-none -translate-y-[130%] opacity-0"
       }`}
     >
-      <div className="flex items-center justify-center px-3 py-2 sm:justify-between sm:gap-x-4 sm:px-7 sm:py-2.5">
+      {/* Phones: as thin as possible — logo left, contact right */}
+      <div className="flex items-center justify-between gap-x-3 px-3 py-1 sm:gap-x-4 sm:px-7 sm:py-2.5">
         <span className="sm:hidden">
           <Logo size="sm" href="/" accent="orange" withMark />
         </span>
         <span className="hidden sm:inline">
           <Logo size="md" href="/" accent="orange" withMark />
         </span>
+        <ContactButton compact />
         <div className="hidden sm:block">
           <NavLinks active={active} compact />
         </div>
@@ -272,16 +290,17 @@ export function PublicHeader({ active }: { active?: "events" | "host" }) {
 
   return (
     <>
-      {/* In-flow header. Phones: compact centered logo, app-title style
-          (links live in the bottom tab bar). sm+: large logo left, nav
+      {/* In-flow header. Phones: compact logo left, contact right (nav
+          links live in the bottom tab bar). sm+: large logo left, nav
           links right. */}
-      <header className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 px-4 py-3 sm:justify-between sm:px-7 sm:py-4">
+      <header className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 px-4 py-3 sm:px-7 sm:py-4">
         <span className="sm:hidden">
           <Logo size="md" href="/" accent="orange" withMark />
         </span>
         <span className="hidden sm:inline">
           <Logo size="lg" href="/" accent="orange" withMark />
         </span>
+        <ContactButton />
         <div className="hidden sm:block">
           <NavLinks active={active} />
         </div>

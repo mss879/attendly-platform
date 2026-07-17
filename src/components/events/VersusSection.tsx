@@ -170,6 +170,10 @@ export function VersusSection({ edition, heading, home, away, tagline }: VersusS
               <img
                 src={home.crest}
                 alt={`${home.name} crest`}
+                loading="lazy"
+                decoding="async"
+                width={208}
+                height={208}
                 className="h-32 w-32 object-contain mix-blend-screen sm:h-52 sm:w-52"
               />
             ) : (
@@ -227,6 +231,10 @@ export function VersusSection({ edition, heading, home, away, tagline }: VersusS
               <img
                 src={away.crest}
                 alt={`${away.name} crest`}
+                loading="lazy"
+                decoding="async"
+                width={208}
+                height={208}
                 className="h-32 w-32 object-contain mix-blend-screen sm:h-52 sm:w-52"
               />
             ) : (

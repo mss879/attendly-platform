@@ -17,18 +17,19 @@ export function Preloader({ onComplete }: { onComplete?: () => void }) {
   const [visible, setVisible] = useState(true);
 
   useIsomorphicLayoutEffect(() => {
-    const isAdminPath = window.location.pathname.startsWith("/admin");
-    const isShownThisLoad = (window as any).__preloaderShown === true;
+    const w = window as Window & { __preloaderShown?: boolean };
+    const isAdminPath = w.location.pathname.startsWith("/admin");
+    const isShownThisLoad = w.__preloaderShown === true;
     const skip =
       isAdminPath ||
       isShownThisLoad ||
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      w.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (skip) {
       setVisible(false);
       onComplete?.();
       return;
     }
-    (window as any).__preloaderShown = true;
+    w.__preloaderShown = true;
   }, []);
 
   if (!visible) return null;
@@ -44,7 +45,6 @@ export function Preloader({ onComplete }: { onComplete?: () => void }) {
 
 function PreloaderOverlay({ onDone }: { onDone: () => void }) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const [progress, setProgress] = useState(0);
   const [statusText, setStatusText] = useState("Initializing Scanner...");
 
@@ -79,141 +79,6 @@ function PreloaderOverlay({ onDone }: { onDone: () => void }) {
 
     return () => clearInterval(interval);
   }, []);
-
-  // WebGL Laser Scanner Background Shader (Grid-free, Flicker-free)
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const gl = canvas.getContext("webgl");
-    if (!gl) return;
-
-    const handleResize = () => {
-      if (!canvas || !gl) return;
-      const dpr = Math.min(window.devicePixelRatio, 1.5);
-      const w = canvas.clientWidth || window.innerWidth || 800;
-      const h = canvas.clientHeight || window.innerHeight || 600;
-      canvas.width = w * dpr;
-      canvas.height = h * dpr;
-      gl.viewport(0, 0, canvas.width, canvas.height);
-    };
-
-    handleResize();
-    window.addEventListener("resize", handleResize);
-
-    const vsSource = `
-      attribute vec2 position;
-      void main() {
-        gl_Position = vec4(position, 0.0, 1.0);
-      }
-    `;
-
-    const fsSource = `
-      precision mediump float;
-      uniform vec2 u_resolution;
-      uniform float u_time;
-      uniform float u_progress;
-
-      void main() {
-          vec2 uv = gl_FragCoord.xy / u_resolution.xy;
-          
-          vec3 cream = vec3(0.97, 0.96, 0.94); // #f7f4f0
-          vec3 orange = vec3(0.98, 0.35, 0.05); // neon orange
-          vec3 green = vec3(0.05, 0.82, 0.22); // success green
-          
-          // Smooth scanning line moving up and down
-          float laserY = sin(u_time * 2.2) * 0.45 + 0.5;
-          float dist = abs(uv.y - laserY);
-          
-          // Glowing laser line (soft falloff)
-          float laserGlow = exp(-dist * 40.0) * 0.55;
-          
-          // Lerp laser color from orange to green based on progress
-          vec3 laserColor = mix(orange, green, step(99.5, u_progress));
-          
-          vec3 color = mix(cream, laserColor, laserGlow);
-          
-          gl_FragColor = vec4(color, 1.0);
-      }
-    `;
-
-    const compileShader = (type: number, source: string) => {
-      const shader = gl.createShader(type);
-      if (!shader) return null;
-      gl.shaderSource(shader, source);
-      gl.compileShader(shader);
-      if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-        gl.deleteShader(shader);
-        return null;
-      }
-      return shader;
-    };
-
-    const vs = compileShader(gl.VERTEX_SHADER, vsSource);
-    const fs = compileShader(gl.FRAGMENT_SHADER, fsSource);
-    if (!vs || !fs) return;
-
-    const program = gl.createProgram();
-    if (!program) return;
-    gl.attachShader(program, vs);
-    gl.attachShader(program, fs);
-    gl.linkProgram(program);
-    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) return;
-
-    gl.useProgram(program);
-
-    const vertices = new Float32Array([
-      -1, -1,  1, -1, -1,  1,
-      -1,  1,  1, -1,  1,  1
-    ]);
-    const buffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-    gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
-
-    const positionLoc = gl.getAttribLocation(program, "position");
-    gl.enableVertexAttribArray(positionLoc);
-    gl.vertexAttribPointer(positionLoc, 2, gl.FLOAT, false, 0, 0);
-
-    const resolutionLoc = gl.getUniformLocation(program, "u_resolution");
-    const timeLoc = gl.getUniformLocation(program, "u_time");
-    const progressLoc = gl.getUniformLocation(program, "u_progress");
-
-    let animationFrameId: number;
-    const startTime = Date.now();
-
-    const render = () => {
-      if (!gl || !canvas) return;
-      gl.uniform2f(resolutionLoc, canvas.width, canvas.height);
-      gl.uniform1f(timeLoc, (Date.now() - startTime) / 1000);
-      
-      const p = parseFloat(canvas.getAttribute("data-progress") || "0");
-      gl.uniform1f(progressLoc, p);
-
-      gl.clearColor(0.97, 0.96, 0.94, 1.0);
-      gl.clear(gl.COLOR_BUFFER_BIT);
-      gl.drawArrays(gl.TRIANGLES, 0, 6);
-
-      animationFrameId = requestAnimationFrame(render);
-    };
-
-    render();
-
-    return () => {
-      window.removeEventListener("resize", handleResize);
-      cancelAnimationFrame(animationFrameId);
-      gl.deleteProgram(program);
-      gl.deleteShader(vs);
-      gl.deleteShader(fs);
-      gl.deleteBuffer(buffer);
-    };
-  }, []);
-
-  // Update canvas progress attribute for the WebGL loop to read
-  useEffect(() => {
-    if (canvasRef.current) {
-      canvasRef.current.setAttribute("data-progress", progress.toString());
-    }
-  }, [progress]);
 
   // Lock body scroll during load
   useEffect(() => {
@@ -312,9 +177,9 @@ function PreloaderOverlay({ onDone }: { onDone: () => void }) {
         "<"
       );
 
-      // Fade canvas
+      // Fade the laser background
       tl.to(
-        ".webgl-canvas",
+        ".preloader-bg",
         {
           opacity: 0,
           duration: 0.8,
@@ -336,43 +201,78 @@ function PreloaderOverlay({ onDone }: { onDone: () => void }) {
     >
       <style>{`
         @keyframes sweep {
-          0% { top: 0%; opacity: 0; }
+          0% { transform: translateY(0); opacity: 0; }
           10% { opacity: 1; }
           90% { opacity: 1; }
-          100% { top: 100%; opacity: 0; }
+          100% { transform: translateY(380px); opacity: 0; }
         }
         .scanner-line {
           position: absolute;
+          top: 0;
           left: 0;
           right: 0;
           height: 3px;
           background: linear-gradient(90deg, transparent, #f97316, #ea580c, #f97316, transparent);
           box-shadow: 0 0 10px #f97316, 0 0 20px #ea580c;
+          will-change: transform, opacity;
           animation: sweep 3.5s linear infinite;
+        }
+        @keyframes laser-drift {
+          from { transform: translateY(-12svh); }
+          to { transform: translateY(78svh); }
+        }
+        .preloader-laser {
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          height: 34svh;
+          will-change: transform;
+          animation: laser-drift 1.43s ease-in-out -0.715s infinite alternate;
+          transition: opacity 0.25s;
         }
       `}</style>
 
-      {/* WebGL Laser Grid Background */}
-      <canvas
-        ref={canvasRef}
-        className="webgl-canvas absolute inset-0 h-full w-full transition-opacity duration-300"
-      />
+      {/* Laser scanner background — a transform-animated CSS glow band in
+          place of the old full-screen WebGL shader: same cream field and
+          sweeping laser at a fraction of the GPU cost on phones. */}
+      <div
+        aria-hidden
+        className="preloader-bg pointer-events-none absolute inset-0 overflow-hidden transition-opacity duration-300"
+      >
+        <div
+          className={`preloader-laser ${progress === 100 ? "opacity-0" : "opacity-100"}`}
+          style={{
+            background:
+              "linear-gradient(180deg, rgba(250,89,13,0) 0%, rgba(250,89,13,0.10) 38%, rgba(250,89,13,0.55) 50%, rgba(250,89,13,0.10) 62%, rgba(250,89,13,0) 100%)",
+          }}
+        />
+        <div
+          className={`preloader-laser ${progress === 100 ? "opacity-100" : "opacity-0"}`}
+          style={{
+            background:
+              "linear-gradient(180deg, rgba(13,209,56,0) 0%, rgba(13,209,56,0.10) 38%, rgba(13,209,56,0.55) 50%, rgba(13,209,56,0.10) 62%, rgba(13,209,56,0) 100%)",
+          }}
+        />
+      </div>
 
-      {/* Double Glass Doors */}
+      {/* Double Glass Doors — plain translucent panes; backdrop-blur here
+          cost two full-screen blur passes per frame on phones for a barely
+          visible effect over the soft laser background */}
       <div className="absolute inset-0 flex pointer-events-none">
-        <div className="left-panel w-1/2 h-full bg-[#f7f4f0]/20 border-r border-orange-950/5 origin-left backdrop-blur-[3px] shadow-[inset_-10px_0_30px_rgba(234,88,12,0.03)]" />
-        <div className="right-panel w-1/2 h-full bg-[#f7f4f0]/20 border-l border-orange-950/5 origin-right backdrop-blur-[3px] shadow-[inset_10px_0_30px_rgba(234,88,12,0.03)]" />
+        <div className="left-panel w-1/2 h-full bg-[#f7f4f0]/30 border-r border-orange-950/5 origin-left shadow-[inset_-10px_0_30px_rgba(234,88,12,0.03)]" />
+        <div className="right-panel w-1/2 h-full bg-[#f7f4f0]/30 border-l border-orange-950/5 origin-right shadow-[inset_10px_0_30px_rgba(234,88,12,0.03)]" />
       </div>
 
       {/* High-tech admitting ticket */}
-      <div className="ticket-wrapper relative z-10 w-72 sm:w-80 h-[380px] bg-white/40 backdrop-blur-md border border-white/60 shadow-2xl rounded-3xl p-6 flex flex-col justify-between overflow-hidden">
+      <div className="ticket-wrapper relative z-10 w-72 sm:w-80 h-[380px] bg-white/55 border border-white/60 shadow-2xl rounded-3xl p-6 flex flex-col justify-between overflow-hidden">
         {/* Neon Orange Scan line (Sweeps the QR code area) */}
         <div className="scanner-overlay absolute inset-0 pointer-events-none z-20">
           <div className="scanner-line" />
         </div>
 
         {/* Access Granted green holographic flash */}
-        <div className="validated-overlay absolute inset-0 bg-emerald-500/95 backdrop-blur-md z-30 opacity-0 flex flex-col items-center justify-center text-white p-6 scale-90 transition-all duration-300">
+        <div className="validated-overlay absolute inset-0 bg-emerald-500/95 z-30 opacity-0 flex flex-col items-center justify-center text-white p-6 scale-90 transition-all duration-300">
           <span className="text-5xl font-black">✓</span>
           <h3 className="text-xl font-black uppercase tracking-wider mt-4">
             Access Granted

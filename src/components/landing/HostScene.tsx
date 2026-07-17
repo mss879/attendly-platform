@@ -173,7 +173,8 @@ export default function HostScene() {
     try {
       renderer = new THREE.WebGLRenderer({
         canvas,
-        antialias: true,
+        // Soft glow beams don't need MSAA on high-DPI phone panels.
+        antialias: window.innerWidth >= 768,
         alpha: true,
         powerPreference: "high-performance",
       });
@@ -260,7 +261,8 @@ export default function HostScene() {
     function resize() {
       const w = wrap!.clientWidth || 1;
       const h = wrap!.clientHeight || 1;
-      const dpr = Math.min(window.devicePixelRatio || 1, 1.75);
+      // Lower backing-store cap on phones — the glow beams hide it.
+      const dpr = Math.min(window.devicePixelRatio || 1, window.innerWidth < 768 ? 1.5 : 1.75);
       renderer.setPixelRatio(dpr);
       renderer.setSize(w, h, false);
       camera.aspect = w / h;

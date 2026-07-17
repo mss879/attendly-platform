@@ -100,7 +100,9 @@ export function AuroraBackground() {
     }
 
     function resize() {
-      const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+      // The output is enormous soft gradient blobs (mostly behind the app
+      // panel): rendering at device resolution is invisible extra work.
+      const dpr = 1;
       canvas.width = Math.floor(window.innerWidth * dpr);
       canvas.height = Math.floor(window.innerHeight * dpr);
       gl!.viewport(0, 0, canvas.width, canvas.height);
@@ -112,9 +114,14 @@ export function AuroraBackground() {
     window.addEventListener("resize", resize);
 
     let raf = 0;
+    let last = 0;
     function frame(now: number) {
-      draw(now);
       if (!reduceMotion) raf = requestAnimationFrame(frame);
+      // The blobs drift at u_time * 0.12 — ~30fps is indistinguishable
+      // from 60 and halves the GPU work on every page.
+      if (now - last < 33) return;
+      last = now;
+      draw(now);
     }
     raf = requestAnimationFrame(frame);
 

@@ -11,7 +11,9 @@ import { ShaderHero } from "@/components/landing/ShaderHero";
 import { appConfig } from "@/lib/config";
 import { getEventListings } from "@/lib/events";
 
-export const dynamic = "force-dynamic";
+// ISR: serve the homepage from cache and refresh event listings in the
+// background — no Supabase round-trip on the request path.
+export const revalidate = 60;
 
 export const metadata: Metadata = {
   alternates: { canonical: "/" },

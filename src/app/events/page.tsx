@@ -7,7 +7,8 @@ import { EventCard } from "@/components/events/EventCard";
 import { FadeIn } from "@/components/FadeIn";
 import { getEventListings } from "@/lib/events";
 
-export const dynamic = "force-dynamic";
+// ISR: serve the listing from cache, refresh in the background.
+export const revalidate = 60;
 
 export const metadata: Metadata = {
   title: "Events",

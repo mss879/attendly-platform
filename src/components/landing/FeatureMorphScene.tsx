@@ -391,7 +391,9 @@ export default function FeatureMorphScene() {
       const w = wrap!.clientWidth || 1;
       const h = wrap!.clientHeight || 1;
       const desktop = window.matchMedia("(min-width: 768px)").matches;
-      const dpr = Math.min(window.devicePixelRatio || 1, 1.75);
+      // Phones are fill-rate bound with 12k blended sprites — cap the
+      // backing store lower there; the soft particles hide the difference.
+      const dpr = Math.min(window.devicePixelRatio || 1, desktop ? 1.75 : 1.5);
       renderer.setPixelRatio(dpr);
       renderer.setSize(w, h, false);
       camera.aspect = w / h;
