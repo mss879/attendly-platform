@@ -90,6 +90,18 @@ export default async function EventPage(props: {
       <div className="flex flex-1 flex-col rounded-2xl bg-[#f7f4f0]/90 shadow-2xl shadow-orange-950/20 ring-1 ring-white/50 backdrop-blur-xl sm:rounded-[28px]">
         <PublicHeader active="events" />
 
+        {event.banner_url && (
+          <div className="mx-auto w-full max-w-5xl px-4 pt-6 sm:px-6">
+            <div className="relative overflow-hidden rounded-none border border-white/60 shadow-lg shadow-orange-950/5 ring-1 ring-black/[0.03]">
+              <img
+                src={event.banner_url}
+                alt={`${event.name} Banner`}
+                className="w-full h-auto"
+              />
+            </div>
+          </div>
+        )}
+
         <EventHero
           name={event.name}
           edition={event.edition}
@@ -101,6 +113,7 @@ export default async function EventPage(props: {
           priceLabel={priceLabel}
           bookHref={bookHref}
           completed={completed}
+          slug={event.slug}
         />
 
         {event.teams && (

@@ -16,7 +16,7 @@ export function EventCard({
   return (
     <Link
       href={`/events/${event.slug}`}
-      className={`group relative block overflow-hidden rounded-3xl bg-white/40 p-6 shadow-lg shadow-orange-950/5 ring-1 ring-white/60 backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:bg-white/55 hover:shadow-xl hover:shadow-orange-950/10 ${
+      className={`group relative block overflow-hidden rounded-none bg-white/40 shadow-lg shadow-orange-950/5 ring-1 ring-white/60 backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:bg-white/55 hover:shadow-xl hover:shadow-orange-950/10 ${
         completed ? "opacity-70 saturate-[0.75]" : ""
       }`}
     >
@@ -29,7 +29,17 @@ export function EventCard({
             : "radial-gradient(120% 120% at 100% 100%, rgba(251,146,60,0.30) 0%, rgba(255,255,255,0) 55%), radial-gradient(120% 120% at 0% 0%, rgba(220,38,38,0.10) 0%, rgba(255,255,255,0) 55%)",
         }}
       />
-      <div className="relative">
+      {event.banner_url && (
+        <div className="relative w-full overflow-hidden border-b border-orange-950/5">
+          <img
+            src={event.banner_url}
+            alt={event.name}
+            className="w-full h-auto transition-transform duration-500 group-hover:scale-[1.02]"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/5 via-transparent to-transparent pointer-events-none" />
+        </div>
+      )}
+      <div className="p-6 relative">
         <div className="flex flex-wrap items-center gap-2">
           {event.edition && (
             <span className="inline-flex rounded-full bg-orange-100/80 px-2.5 py-1 text-[11px] font-bold text-orange-700">

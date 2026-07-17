@@ -55,6 +55,8 @@ export function EventForm({
   const [edition, setEdition] = useState(initial?.edition ?? "");
   const [subtitle, setSubtitle] = useState(initial?.subtitle ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
+  const [bannerUrl, setBannerUrl] = useState(initial?.banner_url ?? "");
+  const [uploadingBanner, setUploadingBanner] = useState(false);
   const [venue, setVenue] = useState(initial?.venue ?? "");
   const [startsAt, setStartsAt] = useState(toLocalInput(initial?.starts_at ?? null));
   const [gatesOpenAt, setGatesOpenAt] = useState(toLocalInput(initial?.gates_open_at ?? null));
@@ -105,6 +107,7 @@ export function EventForm({
     const payload = {
       name: name.trim(),
       slug: slug.trim() || slugify(name),
+      bannerUrl: bannerUrl.trim(),
       edition: edition.trim(),
       subtitle: subtitle.trim(),
       description: description.trim(),
@@ -260,6 +263,97 @@ export function EventForm({
             onChange={(e) => setVenue(e.target.value)}
           />
         </div>
+      </section>
+
+      {/* Event Banner */}
+      <section className={sectionClass}>
+        <h2 className="text-base font-bold text-slate-900">Event banner</h2>
+        <p className="-mt-2 text-sm text-slate-500">
+          Upload a high-resolution banner image for the event page. Recommended size: 1200x500 (approx 21:9). Max size: 5 MB.
+        </p>
+
+        {bannerUrl ? (
+          <div className="relative overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-2">
+            <img
+              src={bannerUrl}
+              alt="Event banner preview"
+              className="max-h-60 w-full rounded-lg object-cover"
+            />
+            <button
+              type="button"
+              onClick={() => setBannerUrl("")}
+              className="absolute right-4 top-4 rounded-full bg-red-600 px-3 py-1.5 text-xs font-bold text-white shadow-md hover:bg-red-700 transition cursor-pointer"
+            >
+              Remove banner
+            </button>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-300 p-8 text-center bg-slate-50 hover:bg-slate-100/55 transition relative">
+            <svg
+              className="mx-auto h-10 w-10 text-slate-400"
+              stroke="currentColor"
+              fill="none"
+              viewBox="0 0 48 48"
+              aria-hidden="true"
+            >
+              <path
+                d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            <div className="mt-4 flex text-sm text-slate-600">
+              <label
+                htmlFor="banner-upload"
+                className="relative cursor-pointer rounded-md font-semibold text-orange-600 focus-within:outline-hidden focus-within:ring-2 focus-within:ring-orange-500 focus-within:ring-offset-2 hover:text-orange-500"
+              >
+                <span>Upload a banner image</span>
+                <input
+                  id="banner-upload"
+                  name="banner-upload"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="sr-only"
+                  disabled={uploadingBanner}
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    
+                    setError(null);
+                    setUploadingBanner(true);
+                    
+                    const formData = new FormData();
+                    formData.append("file", file);
+                    
+                    try {
+                      const res = await fetch("/api/admin/events/banner", {
+                        method: "POST",
+                        body: formData,
+                      });
+                      const data = await res.json();
+                      if (!res.ok) {
+                        setError(data.error ?? "Failed to upload image.");
+                        return;
+                      }
+                      setBannerUrl(data.bannerUrl);
+                    } catch {
+                      setError("Could not upload banner. Please try again.");
+                    } finally {
+                      setUploadingBanner(false);
+                    }
+                  }}
+                />
+              </label>
+            </div>
+            <p className="text-xs text-slate-500 mt-1 font-sans">PNG, JPG, WebP up to 5MB</p>
+            {uploadingBanner && (
+              <span className="mt-2 text-xs font-semibold text-orange-600 animate-pulse font-sans">
+                Uploading banner...
+              </span>
+            )}
+          </div>
+        )}
       </section>
 
       {/* Date & time */}

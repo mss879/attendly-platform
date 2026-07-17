@@ -2,9 +2,10 @@
 
 import gsap from "gsap";
 import Link from "next/link";
-import { Fragment, useEffect, useRef } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { runWhenPageVisible } from "@/lib/motion";
 import { Countdown } from "./Countdown";
+import { ShareModal } from "./ShareModal";
 
 // Hero for the generic event page: masked-rise event name, live countdown,
 // date/venue chips and the booking CTA.
@@ -36,6 +37,7 @@ export interface EventHeroProps {
   priceLabel: string;
   bookHref: string;
   completed: boolean;
+  slug: string;
 }
 
 export function EventHero({
@@ -49,8 +51,10 @@ export function EventHero({
   priceLabel,
   bookHref,
   completed,
+  slug,
 }: EventHeroProps) {
   const ref = useRef<HTMLElement>(null);
+  const [isShareOpen, setIsShareOpen] = useState(false);
 
   useEffect(() => {
     if (!ref.current) return;
@@ -151,6 +155,21 @@ export function EventHero({
           </span>
         )}
         <span className="hero-cta inline-block">
+          <button
+            onClick={() => setIsShareOpen(true)}
+            className="inline-flex items-center gap-2 rounded-full bg-white/80 px-8 py-3.5 text-sm font-bold text-black shadow-sm ring-1 ring-black/[0.06] transition hover:-translate-y-0.5 hover:bg-white cursor-pointer animate-none"
+          >
+            <svg className="h-4 w-4 text-orange-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="18" cy="5" r="3" />
+              <circle cx="6" cy="12" r="3" />
+              <circle cx="18" cy="19" r="3" />
+              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+              <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+            </svg>
+            Share Event
+          </button>
+        </span>
+        <span className="hero-cta inline-block">
           <Link
             href="/events"
             className="inline-block rounded-full bg-white/80 px-8 py-3.5 text-sm font-bold text-black shadow-sm ring-1 ring-black/[0.06] transition hover:-translate-y-0.5 hover:bg-white"
@@ -165,6 +184,13 @@ export function EventHero({
           {priceLabel} per seat · Numbered seating · Personal QR ticket by email
         </p>
       )}
+
+      <ShareModal
+        isOpen={isShareOpen}
+        onClose={() => setIsShareOpen(false)}
+        eventName={name}
+        eventSlug={slug}
+      />
     </section>
   );
 }

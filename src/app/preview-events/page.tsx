@@ -14,6 +14,7 @@ function mockEvent(n: number): EventRow {
   return {
     id: `mock-${n}`,
     owner_id: null,
+    banner_url: null,
     slug: `mock-event-${n}`,
     name: ["Big Match Encounter", "Colombo Jazz Night", "Startup Summit"][n - 1],
     edition: ["45th Edition", "Vol. 12", "2026"][n - 1],

@@ -34,11 +34,19 @@ export const SLIP_ALLOWED_TYPES: Record<string, string> = {
   "application/pdf": "pdf",
 };
 
+export const BANNER_MAX_BYTES = 5 * 1024 * 1024; // 5 MB
+export const BANNER_ALLOWED_TYPES: Record<string, string> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+};
+
 const SLUG_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 
 /** "Create event" wizard payload (organizer console). */
 export const eventDraftSchema = z.object({
   name: z.string().trim().min(3, "Please enter the event name").max(120),
+  bannerUrl: z.string().trim().max(500).optional().default(""),
   slug: z
     .string()
     .trim()

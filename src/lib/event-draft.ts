@@ -8,6 +8,7 @@ export function draftToRow(draft: EventDraftInput) {
   return {
     slug: draft.slug,
     name: draft.name,
+    banner_url: draft.bannerUrl || null,
     edition: draft.edition || null,
     subtitle: draft.subtitle || null,
     tagline: [] as string[],

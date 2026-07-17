@@ -41,6 +41,7 @@ export interface ScheduleItem {
 export interface EventRow {
   id: string;
   owner_id: string | null;
+  banner_url: string | null;
   slug: string;
   name: string;
   edition: string | null;
