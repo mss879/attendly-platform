@@ -36,7 +36,8 @@ export function Footer({ admin = false }: { admin?: boolean }) {
   }
 
   return (
-    <footer className="relative z-10 w-full max-w-7xl mx-auto px-6 sm:px-8 mt-12 sm:mt-16 border-t border-black/[0.06] pt-12 pb-8 text-slate-800">
+    // pb-28 on phones keeps the last row clear of the app-style tab bar.
+    <footer className="relative z-10 w-full max-w-7xl mx-auto px-6 sm:px-8 mt-12 sm:mt-16 border-t border-black/[0.06] pt-12 pb-28 sm:pb-8 text-slate-800">
       <div className="grid grid-cols-1 md:grid-cols-4 gap-8 md:gap-12">
         {/* Branding & Logo */}
         <div className="md:col-span-2 flex flex-col items-start gap-4">

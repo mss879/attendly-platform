@@ -1,9 +1,26 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import gsap from "gsap";
 import { runWhenPageVisible } from "@/lib/motion";
+
+const MOBILE_QUERY = "(max-width: 767px)";
+
+function subscribeMobile(onChange: () => void) {
+  const mql = window.matchMedia(MOBILE_QUERY);
+  mql.addEventListener("change", onChange);
+  return () => mql.removeEventListener("change", onChange);
+}
+
+/** Phones get a stacked layout with a horizontal seam; SSR assumes desktop. */
+function useIsMobile(): boolean {
+  return useSyncExternalStore(
+    subscribeMobile,
+    () => window.matchMedia(MOBILE_QUERY).matches,
+    () => false
+  );
+}
 
 const CHIPS_DATA = [
   { id: 1, left: "8%", top: "20%", size: 90, clipPath: "polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%)", depth: 0.6 },
@@ -18,16 +35,24 @@ export function AudienceSplit() {
   const [hovered, setHovered] = useState<"left" | "right" | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const chipsRef = useRef<(HTMLDivElement | null)[]>([]);
+  const isMobile = useIsMobile();
 
-  // Slanted seam dividing position state
+  // Slanted seam dividing position state. On desktop the two values are the
+  // seam's x at the top/bottom edges; on mobile (stacked panes) they are the
+  // seam's y at the left/right edges.
   const [splitState, setSplitState] = useState({ x1: 56, x2: 44 });
 
   // GSAP split-seam animation
   useEffect(() => {
-    const target = {
-      x1: hovered === "left" ? 70 : hovered === "right" ? 42 : 56,
-      x2: hovered === "left" ? 58 : hovered === "right" ? 30 : 44,
-    };
+    const target = isMobile
+      ? {
+          x1: hovered === "left" ? 58 : hovered === "right" ? 48 : 53,
+          x2: hovered === "left" ? 52 : hovered === "right" ? 42 : 47,
+        }
+      : {
+          x1: hovered === "left" ? 70 : hovered === "right" ? 42 : 56,
+          x2: hovered === "left" ? 58 : hovered === "right" ? 30 : 44,
+        };
 
     gsap.to(splitState, {
       x1: target.x1,
@@ -39,7 +64,7 @@ export function AudienceSplit() {
         setSplitState({ x1: splitState.x1, x2: splitState.x2 });
       },
     });
-  }, [hovered]);
+  }, [hovered, isMobile]);
 
   // Magnetic button effects and initial setup
   useEffect(() => {
@@ -116,16 +141,23 @@ export function AudienceSplit() {
     });
   };
 
-  // Determine split clip-paths
-  const leftClip = `polygon(0 0, ${splitState.x1}% 0, ${splitState.x2}% 100%, 0 100%)`;
-  const rightClip = `polygon(${splitState.x1}% 0, 100% 0, 100% 100%, ${splitState.x2}% 100%)`;
+  // Determine split clip-paths: vertical seam on desktop, horizontal on mobile
+  const leftClip = isMobile
+    ? `polygon(0 0, 100% 0, 100% ${splitState.x2}%, 0 ${splitState.x1}%)`
+    : `polygon(0 0, ${splitState.x1}% 0, ${splitState.x2}% 100%, 0 100%)`;
+  const rightClip = isMobile
+    ? `polygon(0 ${splitState.x1}%, 100% ${splitState.x2}%, 100% 100%, 0 100%)`
+    : `polygon(${splitState.x1}% 0, 100% 0, 100% 100%, ${splitState.x2}% 100%)`;
+  const seam = isMobile
+    ? { x1: "0%", y1: `${splitState.x1}%`, x2: "100%", y2: `${splitState.x2}%` }
+    : { x1: `${splitState.x1}%`, y1: "0%", x2: `${splitState.x2}%`, y2: "100%" };
 
   return (
     <section
       ref={containerRef}
       onPointerMove={handlePointerMove}
       onPointerLeave={handlePointerLeave}
-      className="relative h-[70svh] min-h-[500px] w-full overflow-hidden select-none bg-neutral-900 border-y border-white/10"
+      className="relative h-[100svh] min-h-[720px] w-full overflow-hidden select-none bg-neutral-900 border-y border-white/10 md:h-[70svh] md:min-h-[500px]"
     >
       {/* Background Panes at z-0 */}
       <div
@@ -172,7 +204,7 @@ export function AudienceSplit() {
           clipPath: leftClip,
         }}
       >
-        <div className="absolute inset-y-0 left-0 w-full md:w-[50%] flex flex-col justify-center items-center text-center px-6 md:px-12">
+        <div className="absolute inset-x-0 top-0 h-[47%] md:inset-y-0 md:left-0 md:right-auto md:h-full md:w-[50%] flex flex-col justify-center items-center text-center px-6 md:px-12">
           <span className="inline-flex rounded-full bg-orange-100/80 px-3 py-1 text-[11px] font-bold text-orange-700 tracking-wider uppercase">
             Going to an event
           </span>
@@ -200,7 +232,7 @@ export function AudienceSplit() {
           clipPath: rightClip,
         }}
       >
-        <div className="absolute inset-y-0 right-0 w-full md:w-[50%] flex flex-col justify-center items-center text-center px-6 md:px-12">
+        <div className="absolute inset-x-0 bottom-0 h-[47%] md:inset-y-0 md:left-auto md:right-0 md:h-full md:w-[50%] flex flex-col justify-center items-center text-center px-6 md:px-12">
           <span className="inline-flex rounded-full bg-red-950/80 px-3 py-1 text-[11px] font-bold text-orange-400 tracking-wider uppercase border border-orange-500/20">
             Organizing an event
           </span>
@@ -238,20 +270,20 @@ export function AudienceSplit() {
         </defs>
         {/* Glow behind */}
         <line
-          x1={`${splitState.x1}%`}
-          y1="0"
-          x2={`${splitState.x2}%`}
-          y2="100%"
+          x1={seam.x1}
+          y1={seam.y1}
+          x2={seam.x2}
+          y2={seam.y2}
           stroke="url(#seam-grad)"
           strokeWidth="10"
           className="opacity-30 blur-[6px]"
         />
         {/* Core line */}
         <line
-          x1={`${splitState.x1}%`}
-          y1="0"
-          x2={`${splitState.x2}%`}
-          y2="100%"
+          x1={seam.x1}
+          y1={seam.y1}
+          x2={seam.x2}
+          y2={seam.y2}
           stroke="url(#seam-grad)"
           strokeWidth="3.5"
           className="opacity-90"

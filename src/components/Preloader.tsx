@@ -331,7 +331,7 @@ function PreloaderOverlay({ onDone }: { onDone: () => void }) {
   return (
     <div
       ref={containerRef}
-      className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-[#f7f4f0]"
+      className="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden bg-[#f7f4f0]"
       style={{ perspective: "1500px" }}
     >
       <style>{`

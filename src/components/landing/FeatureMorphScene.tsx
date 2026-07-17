@@ -350,7 +350,6 @@ export default function FeatureMorphScene() {
 
     const parallax = new THREE.Group(); // pointer parallax
     const cloud = new THREE.Points(geometry, material);
-    cloud.position.y = -0.7; // Shift downward to prevent overlapping headline
     parallax.add(cloud);
     scene.add(parallax);
 
@@ -383,17 +382,23 @@ export default function FeatureMorphScene() {
     }
     (section ?? wrap).addEventListener("pointermove", onPointerMove);
 
-    // --- Sizing: dolly the camera back on narrow screens so every
-    //     formation fits the width — mobile keeps the whole picture ---
+    // --- Sizing: dolly the camera so every formation fits the frame. On
+    //     md+ the canvas is the tall left half of the screen and the cloud
+    //     shifts down to clear the headline; on phones it's a short wide
+    //     band between headline and copy, so the camera moves in closer
+    //     and the cloud stays centered ---
     function resize() {
       const w = wrap!.clientWidth || 1;
       const h = wrap!.clientHeight || 1;
+      const desktop = window.matchMedia("(min-width: 768px)").matches;
       const dpr = Math.min(window.devicePixelRatio || 1, 1.75);
       renderer.setPixelRatio(dpr);
       renderer.setSize(w, h, false);
       camera.aspect = w / h;
-      camera.position.z = 11.5 * Math.max(1, 1.25 / Math.max(camera.aspect, 0.01));
+      camera.position.z =
+        11.5 * Math.max(1, 1.25 / Math.max(camera.aspect, 0.01)) * (desktop ? 1 : 0.82);
       camera.updateProjectionMatrix();
+      cloud.position.y = desktop ? -0.7 : 0;
       uniforms.uPixelRatio.value = dpr;
     }
     resize();

@@ -337,6 +337,13 @@ export default function HeroScene() {
       { pos: [-2.75, -0.1, -0.5], rot: [-0.1, 0.52, 0.13], scale: 0.92, phase: 0 },
       { pos: [2.75, 0.15, -0.8], rot: [-0.04, -0.58, -0.12], scale: 0.74, phase: 2.1 },
     ] as const;
+    // Phones: the copy owns the center of the narrow frame, so the tickets
+    // shrink and tuck into the quiet corners instead — bottom-left above
+    // the marquee, top-right beside the logo band.
+    const phoneSpecs = [
+      { pos: [-0.64, -1.12, -0.6], scale: 0.42 },
+      { pos: [0.72, 1.72, -0.8], scale: 0.28 },
+    ] as const;
     for (const spec of specs) {
       const mesh = new THREE.Mesh(geometry, [faceMaterial, sideMaterial]);
       mesh.rotation.set(spec.rot[0], spec.rot[1], spec.rot[2]);
@@ -462,6 +469,15 @@ export default function HeroScene() {
       const planeH = 2 * dist * Math.tan((camera.fov * Math.PI) / 360);
       silk.scale.set(planeH * camera.aspect, planeH, 1);
       silkUniforms.uAspect.value = camera.aspect;
+      // Ticket layout per breakpoint. The float group's y is rewritten from
+      // `base` every frame, so the base moves too — not just the group.
+      const phone = window.matchMedia("(max-width: 639px)").matches;
+      tickets.forEach((ticket, i) => {
+        const spec = phone ? phoneSpecs[i] : specs[i];
+        ticket.base = { x: spec.pos[0], y: spec.pos[1], z: spec.pos[2] };
+        ticket.float.position.set(spec.pos[0], spec.pos[1], spec.pos[2]);
+        ticket.mesh.scale.setScalar(spec.scale);
+      });
     }
     resize();
     const ro = new ResizeObserver(resize);

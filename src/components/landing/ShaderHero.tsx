@@ -179,32 +179,40 @@ export function ShaderHero() {
         </h1>
 
         <p className="hero-sub mx-auto mt-4 max-w-xl text-base text-black sm:text-lg">
-          Attendly turns any event into a seamless experience — attendees pick
-          numbered seats on a live map and walk in with a personal QR ticket.
-          Organizers watch it all happen from one dashboard.
+          {/* Phones get the short cut — the full pitch reads text-heavy there */}
+          <span className="sm:hidden">
+            Pick your seat on a live map, get your QR ticket, walk in with one
+            scan.
+          </span>
+          <span className="hidden sm:inline">
+            Attendly turns any event into a seamless experience — attendees
+            pick numbered seats on a live map and walk in with a personal QR
+            ticket. Organizers watch it all happen from one dashboard.
+          </span>
         </p>
 
-        <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
-          <span className="hero-cta inline-block">
+        {/* Phones: equal-width buttons side by side; sm+: hug their labels */}
+        <div className="mx-auto mt-7 flex w-full max-w-md items-center justify-center gap-2.5 sm:w-auto sm:max-w-none sm:flex-wrap sm:gap-3">
+          <span className="hero-cta block min-w-0 flex-1 sm:flex-none">
             <Link
               href="/events"
-              className="group inline-block rounded-full bg-orange-600 px-8 py-3.5 text-sm font-bold text-white shadow-lg shadow-orange-600/30 transition-colors hover:bg-orange-700"
+              className="group block w-full whitespace-nowrap rounded-full bg-orange-600 px-2 py-3.5 text-center text-sm font-bold text-white shadow-lg shadow-orange-600/30 transition-colors hover:bg-orange-700 sm:inline-block sm:w-auto sm:px-8"
             >
               Find your event
               <span className="ml-1.5 inline-block transition group-hover:translate-x-0.5">→</span>
             </Link>
           </span>
-          <span className="hero-cta inline-block">
+          <span className="hero-cta block min-w-0 flex-1 sm:flex-none">
             <Link
               href="/host"
-              className="inline-block rounded-full bg-white/80 px-8 py-3.5 text-sm font-bold text-black shadow-sm ring-1 ring-black/[0.06] transition-colors hover:bg-white"
+              className="block w-full whitespace-nowrap rounded-full bg-white/80 px-2 py-3.5 text-center text-sm font-bold text-black shadow-sm ring-1 ring-black/[0.06] transition-colors hover:bg-white sm:inline-block sm:w-auto sm:px-8"
             >
               Host your event
             </Link>
           </span>
         </div>
 
-        <p className="hero-cta mt-12 text-xs font-bold text-black/80">
+        <p className="hero-cta mt-12 hidden text-xs font-bold text-black/80 sm:block">
           No apps to install · No printouts · Verified payments before every ticket
         </p>
       </div>
@@ -216,6 +224,9 @@ export function ShaderHero() {
           <MarqueeRow hidden />
         </div>
       </div>
+
+      {/* Phones: keep the marquee clear of the app-style bottom tab bar */}
+      <div aria-hidden className="h-24 sm:hidden" />
     </section>
   );
 }

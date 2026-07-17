@@ -159,7 +159,7 @@ export function FeatureShowcase() {
         }
 
         const mm = gsap.matchMedia();
-        mm.add({ desktop: "(min-width: 640px)", mobile: "(max-width: 639px)" }, (mctx) => {
+        mm.add({ desktop: "(min-width: 768px)", mobile: "(max-width: 767px)" }, (mctx) => {
           const desktop = mctx.conditions?.desktop === true;
           const slide = desktop ? 40 : 24;
           const blocks = gsap.utils.toArray<HTMLElement>(stage.querySelectorAll(".morph-copy"));
@@ -282,10 +282,12 @@ export function FeatureShowcase() {
       {showAct ? (
         <section ref={stageRef} id="features" className="relative h-[400svh] scroll-mt-24">
           <div className="sticky top-0 flex h-svh items-center overflow-hidden w-full">
-            {/* CSS wash fallback — always painted; the canvas fades in above */}
+            {/* CSS wash fallback — always painted; the canvas fades in above.
+                On phones the scene gets its own band between the headline and
+                the copy block; on md+ it owns the left half of the screen. */}
             <div
               aria-hidden
-              className="absolute inset-0 md:left-0 md:right-auto md:w-1/2 md:h-full md:flex md:items-center md:justify-center"
+              className="absolute inset-x-0 top-[24%] bottom-[34%] md:inset-y-0 md:left-0 md:right-auto md:w-1/2"
               style={{
                 background:
                   "radial-gradient(80% 60% at 50% 58%, rgba(251,146,60,0.18) 0%, rgba(251,191,36,0.08) 45%, rgba(247,244,240,0) 75%)",
@@ -299,7 +301,7 @@ export function FeatureShowcase() {
               <div className="hidden md:block md:col-span-6" />
 
               {/* Content column (right 50% of screen holds the text on desktop) */}
-              <div className="col-span-12 md:col-span-6 flex flex-col justify-between md:justify-center h-full w-full py-8 md:py-24 text-center md:text-left">
+              <div className="col-span-12 md:col-span-6 flex flex-col md:justify-center h-full w-full pt-14 pb-4 md:py-24 text-center md:text-left">
                 {/* Act header */}
                 <div className="morph-head pointer-events-none relative w-full">
                   <p className="morph-kicker text-[11px] font-semibold uppercase tracking-wider text-orange-700">
@@ -312,6 +314,9 @@ export function FeatureShowcase() {
                     </span>
                   </h2>
                 </div>
+
+                {/* Phones: flexible spacer so the copy sits below the canvas band */}
+                <div aria-hidden className="flex-1 md:hidden" />
 
                 {/* Scene copy blocks, stacked and swapped by the scrub */}
                 <div className="pointer-events-none relative mt-8 md:mt-10 w-full h-40">
