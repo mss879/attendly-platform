@@ -1,12 +1,24 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { hostSignupSchema } from "@/lib/validation";
+import { clientIp, rateLimit } from "@/lib/rate-limit";
 
 // Organizer self-signup (apply-to-host flow). Creates the auth user with a
 // confirmed email plus their organizer profile; the client then signs in
 // with the same credentials.
 
 export async function POST(request: Request) {
+  const limited = rateLimit(`signup:${clientIp(request)}`, {
+    limit: 5,
+    windowMs: 60 * 60 * 1000,
+  });
+  if (!limited.allowed) {
+    return NextResponse.json(
+      { error: "Too many signup attempts — please try again later." },
+      { status: 429, headers: { "Retry-After": String(limited.retryAfterSeconds) } }
+    );
+  }
+
   let body: unknown;
   try {
     body = await request.json();

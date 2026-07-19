@@ -1,11 +1,9 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
-import {
-  registrationSchema,
-  SLIP_ALLOWED_TYPES,
-  SLIP_MAX_BYTES,
-} from "@/lib/validation";
+import { registrationSchema, SLIP_MAX_BYTES } from "@/lib/validation";
+import { validateUpload } from "@/lib/upload";
+import { clientIp, rateLimit } from "@/lib/rate-limit";
 import { validSeatIds } from "@/lib/seating";
 import { eventPhase } from "@/lib/event-time";
 import { sendEmail } from "@/lib/email/send";
@@ -13,7 +11,25 @@ import { bookingEmail } from "@/lib/email/templates";
 import { portalUrl } from "@/lib/config";
 import type { EventRow } from "@/lib/types";
 
+/**
+ * Repeat bookings from the same email are allowed, but only this many may
+ * sit unreviewed (pending / slip under review) per event at once — so one
+ * address can't hold seats en masse without paying.
+ */
+const MAX_ACTIVE_BOOKINGS_PER_EMAIL = 5;
+
 export async function POST(request: Request) {
+  const limited = rateLimit(`book:${clientIp(request)}`, {
+    limit: 10,
+    windowMs: 10 * 60 * 1000,
+  });
+  if (!limited.allowed) {
+    return NextResponse.json(
+      { error: "Too many booking attempts — please wait a few minutes and try again." },
+      { status: 429, headers: { "Retry-After": String(limited.retryAfterSeconds) } }
+    );
+  }
+
   let form: FormData;
   try {
     form = await request.formData();
@@ -88,35 +104,29 @@ export async function POST(request: Request) {
       { status: 400 }
     );
   }
-  let ext = SLIP_ALLOWED_TYPES[file.type];
-  if (!ext && file.name) {
-    const fileExt = file.name.split(".").pop()?.toLowerCase();
-    if (fileExt && ["jpg", "jpeg", "png", "webp", "pdf"].includes(fileExt)) {
-      ext = fileExt === "jpeg" ? "jpg" : fileExt;
-    }
-  }
-  if (!ext) {
-    return NextResponse.json(
-      { error: "Only JPG, PNG, WebP or PDF files are accepted." },
-      { status: 400 }
-    );
-  }
-  if (file.size === 0 || file.size > SLIP_MAX_BYTES) {
-    return NextResponse.json(
-      { error: "The file must be between 1 byte and 5 MB." },
-      { status: 400 }
-    );
+  const upload = await validateUpload(file, {
+    allowedExts: ["jpg", "png", "webp", "pdf"],
+    maxBytes: SLIP_MAX_BYTES,
+    typeError: "Only JPG, PNG, WebP or PDF files are accepted.",
+    sizeError: "The file must be between 1 byte and 5 MB.",
+  });
+  if (!upload.ok) {
+    return NextResponse.json({ error: upload.error }, { status: 400 });
   }
 
-  const { fullName, email, phone, batch } = parsedDetails.data;
+  const { fullName, phone, batch } = parsedDetails.data;
+  const email = parsedDetails.data.email.toLowerCase();
 
-  // --- one booking per email per event ---
-  const { data: existing, error: lookupError } = await supabase
+  // --- cap unreviewed bookings per email (repeat bookings are welcome) ---
+  // ilike with wildcards escaped = case-insensitive match on legacy
+  // mixed-case rows too; new rows are stored lowercase.
+  const emailPattern = email.replace(/[\\%_]/g, "\\$&");
+  const { count: activeCount, error: lookupError } = await supabase
     .from("registrations")
-    .select("id")
+    .select("id", { count: "exact", head: true })
     .eq("event_id", event.id)
-    .ilike("email", email)
-    .limit(1);
+    .ilike("email", emailPattern)
+    .in("payment_status", ["pending", "slip_uploaded"]);
   if (lookupError) {
     console.error("[book] lookup failed:", lookupError);
     return NextResponse.json(
@@ -124,11 +134,11 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
-  if (existing && existing.length > 0) {
+  if ((activeCount ?? 0) >= MAX_ACTIVE_BOOKINGS_PER_EMAIL) {
     return NextResponse.json(
       {
         error:
-          "This email already has a booking for this event. Check your inbox for your booking email, or contact the organizers.",
+          "This email has several bookings awaiting payment review for this event. Please wait for those to be verified, or contact the organizers.",
       },
       { status: 409 }
     );
@@ -205,11 +215,10 @@ export async function POST(request: Request) {
   }
 
   // --- store the payment slip ---
-  const storagePath = `${registration.id}/${Date.now()}.${ext}`;
-  const bytes = Buffer.from(await file.arrayBuffer());
+  const storagePath = `${registration.id}/${Date.now()}.${upload.ext}`;
   const { error: uploadError } = await supabase.storage
     .from("payment-slips")
-    .upload(storagePath, bytes, { contentType: file.type });
+    .upload(storagePath, upload.bytes, { contentType: upload.contentType });
   if (uploadError) {
     console.error("[book] storage upload failed:", uploadError);
     await rollback();
