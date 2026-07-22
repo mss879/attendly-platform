@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { registrationSchema, SLIP_MAX_BYTES } from "@/lib/validation";
 import { validateUpload } from "@/lib/upload";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
+import { allowsNonBatch, formatBatch } from "@/lib/batch";
 import { validSeatIds } from "@/lib/seating";
 import { eventPhase } from "@/lib/event-time";
 import { sendEmail } from "@/lib/email/send";
@@ -63,7 +64,12 @@ export async function POST(request: Request) {
   }
 
   // --- validate the participant details ---
-  const parsedDetails = registrationSchema(event.collect_batch).safeParse({
+  // The non-cohort option ("Non RC") is only valid where the event offers it,
+  // so a crafted payload can't smuggle it into an event that doesn't.
+  const parsedDetails = registrationSchema(
+    event.collect_batch,
+    allowsNonBatch(event.non_batch_label)
+  ).safeParse({
     fullName: String(form.get("fullName") ?? ""),
     email: String(form.get("email") ?? ""),
     phone: String(form.get("phone") ?? ""),
@@ -261,7 +267,7 @@ export async function POST(request: Request) {
   const { subject, html } = bookingEmail({
     eventName: event.name,
     fullName,
-    batch,
+    batchLabel: formatBatch(batch, event.non_batch_label),
     seats,
     total: seats.length * seating.pricePerSeat,
     reference: registration.id.slice(0, 8).toUpperCase(),

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Avatar } from "@/components/admin/Avatar";
 import { FadeIn } from "@/components/FadeIn";
+import { shortBatch } from "@/lib/batch";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireEventAccess } from "@/lib/supabase/auth";
 import type { PaymentStatus, Registration } from "@/lib/types";
@@ -127,7 +128,7 @@ export default async function RegistrationsPage({
                   <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
                     {r.batch && (
                       <span className="rounded-full bg-slate-100 px-2.5 py-1 font-bold text-slate-600">
-                        # {r.batch}
+                        {shortBatch(r.batch, event.non_batch_label)}
                       </span>
                     )}
                     <span>{r.phone}</span>
@@ -168,7 +169,7 @@ export default async function RegistrationsPage({
                     {event.collect_batch && (
                       <td className="px-5 py-3.5">
                         <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600">
-                          # {r.batch || "—"}
+                          {shortBatch(r.batch, event.non_batch_label)}
                         </span>
                       </td>
                     )}

@@ -58,6 +58,11 @@ export interface EventRow {
   seating: SeatingConfig;
   bank: BankDetails;
   collect_batch: boolean;
+  /**
+   * Label for the "outside the batch" option (e.g. "Non RC"), or null when
+   * this event doesn't offer one.
+   */
+  non_batch_label: string | null;
   status: EventStatus;
   created_at: string;
   published_at: string | null;

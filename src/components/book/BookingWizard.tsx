@@ -4,6 +4,7 @@ import gsap from "gsap";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { SeatMap } from "@/components/book/SeatMap";
+import { NON_BATCH_VALUE } from "@/lib/batch";
 import { formatLKR } from "@/lib/seating";
 import type { BankDetails, SeatingConfig } from "@/lib/types";
 import { SLIP_ALLOWED_TYPES, SLIP_MAX_BYTES } from "@/lib/validation";
@@ -30,6 +31,7 @@ export function BookingWizard({
   years,
   initialTakenSeats,
   bank,
+  nonBatchLabel = "",
 }: {
   eventSlug: string;
   seating: SeatingConfig;
@@ -37,6 +39,8 @@ export function BookingWizard({
   years: string[];
   initialTakenSeats: string[];
   bank: BankDetails;
+  /** Label for the non-cohort option, or "" when the event has none. */
+  nonBatchLabel?: string;
 }) {
   const [step, setStep] = useState(0); // 0..2, 3 = success
   const [details, setDetails] = useState<Details>({
@@ -309,12 +313,26 @@ export function BookingWizard({
                 <option value="" disabled>
                   Select your batch year
                 </option>
+                {/* Guests who were never part of the cohort pick this instead
+                    of a year — listed first so they don't scroll the years. */}
+                {nonBatchLabel && (
+                  <option value={NON_BATCH_VALUE}>{nonBatchLabel}</option>
+                )}
                 {years.map((y) => (
                   <option key={y} value={y}>
                     Class of {y}
                   </option>
                 ))}
               </select>
+              {nonBatchLabel && (
+                <p className="mt-1 text-xs text-slate-400">
+                  Not an old boy? Pick{" "}
+                  <span className="font-semibold text-slate-500">
+                    {nonBatchLabel}
+                  </span>{" "}
+                  — it&apos;s for family and friends.
+                </p>
+              )}
             </div>
           )}
 

@@ -1,5 +1,6 @@
 import { Avatar } from "@/components/admin/Avatar";
 import { FadeIn } from "@/components/FadeIn";
+import { formatBatch, shortBatch } from "@/lib/batch";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireEventAccess } from "@/lib/supabase/auth";
 import type { Registration, Ticket } from "@/lib/types";
@@ -86,7 +87,7 @@ export default async function CheckinsPage({
                       </span>
                       {t.registrations.batch && (
                         <span className="block text-xs text-slate-400">
-                          Class of {t.registrations.batch}
+                          {formatBatch(t.registrations.batch, event.non_batch_label)}
                         </span>
                       )}
                     </span>
@@ -146,7 +147,7 @@ export default async function CheckinsPage({
                     {event.collect_batch && (
                       <td className="px-5 py-3.5">
                         <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600">
-                          # {t.registrations.batch || "—"}
+                          {shortBatch(t.registrations.batch, event.non_batch_label)}
                         </span>
                       </td>
                     )}

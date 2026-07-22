@@ -54,6 +54,7 @@ export default async function CustomTicketsPage({
         collectBatch={event.collect_batch}
         years={batchYears()}
         initialTakenSeats={takenSeats}
+        nonBatchLabel={event.non_batch_label ?? ""}
       />
 
       <section>

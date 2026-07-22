@@ -7,6 +7,7 @@ import { Footer } from "@/components/Footer";
 import { StatusBadge } from "@/components/StatusBadge";
 import { SlipUploadForm } from "@/components/SlipUploadForm";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { formatBatch } from "@/lib/batch";
 import { formatLKR } from "@/lib/seating";
 import { qrDataUrl } from "@/lib/qr";
 import { sortTickets } from "@/lib/tickets";
@@ -107,7 +108,9 @@ export default async function PortalPage({
                   {registration.full_name}
                 </h1>
                 <p className="mt-0.5 text-sm text-slate-500">
-                  {registration.batch ? `Class of ${registration.batch} · ` : ""}
+                  {formatBatch(registration.batch, event.non_batch_label)
+                    ? `${formatBatch(registration.batch, event.non_batch_label)} · `
+                    : ""}
                   Ref{" "}
                   <span className="font-mono font-semibold">
                     {registration.id.slice(0, 8).toUpperCase()}

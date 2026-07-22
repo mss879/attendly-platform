@@ -117,6 +117,7 @@ export default async function BookPage(props: {
                 years={batchYears()}
                 initialTakenSeats={takenSeats}
                 bank={event.bank}
+                nonBatchLabel={event.non_batch_label ?? ""}
               />
             </>
           )}

@@ -35,6 +35,7 @@ function mockEvent(n: number): EventRow {
     },
     bank: { name: "Mock Bank", accountName: "Mock", accountNumber: "000", branch: "Colombo" },
     collect_batch: false,
+    non_batch_label: null,
     status: "published",
     created_at: new Date().toISOString(),
     published_at: new Date().toISOString(),

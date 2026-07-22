@@ -5,6 +5,7 @@ import { getEventAccess } from "@/lib/supabase/auth";
 import { sendEmail } from "@/lib/email/send";
 import { rejectionEmail } from "@/lib/email/templates";
 import { portalUrl } from "@/lib/config";
+import { formatBatch } from "@/lib/batch";
 import { issueSeatTickets, sendTicketsEmail } from "@/lib/tickets";
 import type { Registration } from "@/lib/types";
 
@@ -129,7 +130,7 @@ export async function POST(request: Request) {
     to: registration.email,
     eventName,
     fullName: registration.full_name,
-    batch: registration.batch,
+    batchLabel: formatBatch(registration.batch, access.event.non_batch_label),
     tickets,
     portalUrl: link,
   });

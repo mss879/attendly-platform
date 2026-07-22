@@ -119,9 +119,7 @@ export function GateScanner({ eventId }: { eventId: string }) {
                 </p>
               )}
               <p className="mt-2 text-sm font-semibold text-emerald-700">
-                {result.participant.batch
-                  ? `Class of ${result.participant.batch} · `
-                  : ""}
+                {result.participant.batch ? `${result.participant.batch} · ` : ""}
                 {result.participant.ticketNumber}
               </p>
               <p className="mt-1 text-xs text-emerald-600">
@@ -143,9 +141,7 @@ export function GateScanner({ eventId }: { eventId: string }) {
               )}
               <p className="mt-2 text-sm font-semibold text-red-700">
                 {result.participant.name} ·{" "}
-                {result.participant.batch
-                  ? `Class of ${result.participant.batch} · `
-                  : ""}
+                {result.participant.batch ? `${result.participant.batch} · ` : ""}
                 {result.participant.ticketNumber}
               </p>
               {result.participant.checkedInAt && (

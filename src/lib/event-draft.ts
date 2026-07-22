@@ -29,6 +29,7 @@ export function draftToRow(draft: EventDraftInput) {
     },
     bank: draft.bank,
     collect_batch: draft.collectBatch,
+    non_batch_label: draft.nonBatchLabel || null,
   };
 }
 

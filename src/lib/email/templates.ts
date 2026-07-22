@@ -67,7 +67,8 @@ function detailRow(label: string, value: string): string {
 interface BookingEmailArgs {
   eventName: string;
   fullName: string;
-  batch: string;
+  /** Display text: "Class of 2005", the event's non-cohort label, or "". */
+  batchLabel: string;
   seats: string[];
   total: number;
   reference: string;
@@ -78,7 +79,7 @@ interface BookingEmailArgs {
 export function bookingEmail({
   eventName,
   fullName,
-  batch,
+  batchLabel,
   seats,
   total,
   reference,
@@ -94,7 +95,7 @@ export function bookingEmail({
     <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 20px;">
       ${detailRow("Booking ref", reference)}
       ${detailRow("Name", fullName)}
-      ${batch ? detailRow("Batch", `Class of ${batch}`) : ""}
+      ${batchLabel ? detailRow("Batch", batchLabel) : ""}
       ${detailRow(seats.length === 1 ? "Seat" : "Seats", seats.join(", "))}
       ${detailRow("Total", `Rs ${total.toLocaleString("en-LK")}`)}
     </table>
@@ -129,7 +130,8 @@ export interface SeatTicket {
 interface TicketEmailArgs {
   eventName: string;
   fullName: string;
-  batch: string;
+  /** Display text: "Class of 2005", the event's non-cohort label, or "". */
+  batchLabel: string;
   tickets: SeatTicket[];
   portalUrl: string;
   /** Organizer-issued comp ticket — there was no payment to verify. */
@@ -139,7 +141,7 @@ interface TicketEmailArgs {
 export function ticketEmail({
   eventName,
   fullName,
-  batch,
+  batchLabel,
   tickets,
   portalUrl,
   custom = false,
@@ -160,7 +162,7 @@ export function ticketEmail({
     <p style="margin:0 0 16px;">${opening}</p>
     <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 20px;">
       ${detailRow("Name", fullName)}
-      ${batch ? detailRow("Batch", `Class of ${batch}`) : ""}
+      ${batchLabel ? detailRow("Batch", batchLabel) : ""}
     </table>
     <p style="margin:0 0 8px;font-weight:bold;color:#1e293b;">${many ? `Your ${tickets.length} tickets` : "Your ticket"}</p>
     <p style="margin:0 0 12px;">${

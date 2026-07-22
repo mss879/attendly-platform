@@ -6,6 +6,7 @@ import { FadeIn } from "@/components/FadeIn";
 import { ReviewButtons } from "@/components/admin/ReviewButtons";
 import { BookingEditor } from "@/components/admin/BookingEditor";
 import { batchYears, portalUrl } from "@/lib/config";
+import { formatBatch } from "@/lib/batch";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireEventAccess } from "@/lib/supabase/auth";
 import { sortTickets } from "@/lib/tickets";
@@ -101,7 +102,9 @@ export default async function RegistrationDetailPage({
                 {registration.full_name}
               </h1>
               <p className="mt-0.5 text-sm text-slate-500">
-                {registration.batch ? `Class of ${registration.batch} · ` : ""}
+                {formatBatch(registration.batch, event.non_batch_label)
+                  ? `${formatBatch(registration.batch, event.non_batch_label)} · `
+                  : ""}
                 Ref{" "}
                 <span className="font-mono font-semibold">
                   {registration.id.slice(0, 8).toUpperCase()}
@@ -252,6 +255,7 @@ export default async function RegistrationDetailPage({
           currentSeats={seats}
           otherTakenSeats={otherTakenSeats}
           checkedInSeats={checkedInSeats}
+          nonBatchLabel={event.non_batch_label ?? ""}
         />
       </div>
     </FadeIn>
