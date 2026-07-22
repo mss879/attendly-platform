@@ -1,4 +1,5 @@
 import { appConfig } from "@/lib/config";
+import type { BankDetails } from "@/lib/types";
 
 // Inline-styled HTML emails (email clients ignore stylesheets).
 // Every template shares the Attendly header and footer; the event name is
@@ -71,6 +72,7 @@ interface BookingEmailArgs {
   total: number;
   reference: string;
   portalUrl: string;
+  bank: BankDetails;
 }
 
 export function bookingEmail({
@@ -81,7 +83,11 @@ export function bookingEmail({
   total,
   reference,
   portalUrl,
+  bank,
 }: BookingEmailArgs) {
+  const hasBank = Boolean(
+    bank.name || bank.accountName || bank.accountNumber || bank.branch
+  );
   const body = `
     <p style="margin:0 0 16px;">Hi <strong>${escapeHtml(fullName)}</strong>,</p>
     <p style="margin:0 0 16px;">Your seat booking for <strong>${escapeHtml(eventName)}</strong> has been received, and your payment slip is with the organizers for review. Here are your booking details:</p>
@@ -92,6 +98,17 @@ export function bookingEmail({
       ${detailRow(seats.length === 1 ? "Seat" : "Seats", seats.join(", "))}
       ${detailRow("Total", `Rs ${total.toLocaleString("en-LK")}`)}
     </table>
+    ${
+      hasBank
+        ? `<p style="margin:0 0 8px;font-weight:bold;color:#1e293b;">Payment account</p>
+    <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 20px;">
+      ${bank.name ? detailRow("Bank", bank.name) : ""}
+      ${bank.accountName ? detailRow("Account name", bank.accountName) : ""}
+      ${bank.accountNumber ? detailRow("Account number", bank.accountNumber) : ""}
+      ${bank.branch ? detailRow("Branch", bank.branch) : ""}
+    </table>`
+        : ""
+    }
     <p style="margin:0 0 8px;font-weight:bold;color:#1e293b;">What happens next</p>
     <p style="margin:0 0 12px;">The organizers will verify your bank transfer. Once verified, your ticket with a QR code will be emailed to you — show it at the gate to check in. You can track the review on your personal page any time.</p>
     ${button(portalUrl, "Track my booking")}
@@ -103,40 +120,71 @@ export function bookingEmail({
   };
 }
 
+/** One issued ticket = one seat = one QR code. */
+export interface SeatTicket {
+  ticketNumber: string;
+  seatNo: string | null;
+}
+
 interface TicketEmailArgs {
   eventName: string;
   fullName: string;
   batch: string;
-  ticketNumber: string;
-  seats: string[];
+  tickets: SeatTicket[];
   portalUrl: string;
+  /** Organizer-issued comp ticket — there was no payment to verify. */
+  custom?: boolean;
 }
 
 export function ticketEmail({
   eventName,
   fullName,
   batch,
-  ticketNumber,
-  seats,
+  tickets,
   portalUrl,
+  custom = false,
 }: TicketEmailArgs) {
+  const many = tickets.length > 1;
+  const opening = custom
+    ? `The organizers have issued ${many ? `${tickets.length} tickets` : "a ticket"} for you for <strong>${escapeHtml(eventName)}</strong>. 🎟️`
+    : `Your payment has been verified — your ${many ? "tickets are" : "ticket is"} confirmed for <strong>${escapeHtml(eventName)}</strong>! 🎉`;
+
+  const ticketRows = tickets
+    .map((t) =>
+      detailRow(t.seatNo ? `Seat ${t.seatNo}` : "Ticket", t.ticketNumber)
+    )
+    .join("");
+
   const body = `
     <p style="margin:0 0 16px;">Hi <strong>${escapeHtml(fullName)}</strong>,</p>
-    <p style="margin:0 0 16px;">Your payment has been verified — your ticket for <strong>${escapeHtml(eventName)}</strong> is confirmed! 🎉</p>
+    <p style="margin:0 0 16px;">${opening}</p>
     <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 20px;">
-      ${detailRow("Ticket number", ticketNumber)}
-      ${seats.length > 0 ? detailRow(seats.length === 1 ? "Seat" : "Seats", seats.join(", ")) : ""}
       ${detailRow("Name", fullName)}
       ${batch ? detailRow("Batch", `Class of ${batch}`) : ""}
     </table>
-    <p style="margin:0 0 12px;">Your QR code is attached to this email, and is also available on your ticket page. <strong>Show the QR code at the entrance</strong> — it will be scanned to check you in.</p>
-    ${button(portalUrl, "View my ticket & QR code")}
-    <p style="margin:0;color:#64748b;font-size:13px;">Tip: save the attached QR image to your phone, or keep this page handy for quick entry at the gate.</p>
+    <p style="margin:0 0 8px;font-weight:bold;color:#1e293b;">${many ? `Your ${tickets.length} tickets` : "Your ticket"}</p>
+    <p style="margin:0 0 12px;">${
+      many
+        ? "Each seat has its <strong>own ticket number and its own QR code</strong> — every attendee is scanned in separately, so give each person their own QR."
+        : "Your ticket number and QR code are below."
+    }</p>
+    <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 20px;">
+      ${ticketRows}
+    </table>
+    <p style="margin:0 0 12px;">${
+      many
+        ? `All ${tickets.length} QR codes are attached to this email (one image per seat, named with its seat) and are also on your ticket page.`
+        : "Your QR code is attached to this email, and is also available on your ticket page."
+    } <strong>Show the QR code at the entrance</strong> — it will be scanned to check you in.</p>
+    ${button(portalUrl, many ? "View my tickets & QR codes" : "View my ticket & QR code")}
+    <p style="margin:0;color:#64748b;font-size:13px;">Tip: save the attached QR ${many ? "images" : "image"} to your phone, or keep this page handy for quick entry at the gate.</p>
   `;
-  return {
-    subject: `Your ticket ${ticketNumber} — ${eventName}`,
-    html: layout(body, eventName),
-  };
+
+  const subject = many
+    ? `Your ${tickets.length} tickets — ${eventName}`
+    : `Your ticket ${tickets[0]?.ticketNumber ?? ""} — ${eventName}`;
+
+  return { subject, html: layout(body, eventName) };
 }
 
 interface RejectionEmailArgs {

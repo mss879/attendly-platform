@@ -63,6 +63,9 @@ export interface EventRow {
   published_at: string | null;
 }
 
+/** How a registration was created: the public wizard, or an organizer. */
+export type RegistrationSource = "booking" | "custom";
+
 export interface Registration {
   id: string;
   event_id: string;
@@ -71,6 +74,7 @@ export interface Registration {
   phone: string;
   batch: string;
   payment_status: PaymentStatus;
+  source: RegistrationSource;
   access_token: string;
   created_at: string;
 }
@@ -93,6 +97,8 @@ export interface PaymentSlip {
 export interface Ticket {
   id: string;
   registration_id: string;
+  /** One ticket per booked seat. Null only for legacy seatless rows. */
+  seat_no: string | null;
   ticket_number: string;
   qr_token: string;
   issued_at: string;

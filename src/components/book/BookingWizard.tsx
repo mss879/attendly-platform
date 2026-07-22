@@ -446,7 +446,7 @@ export function BookingWizard({
               Transfer <strong className="text-slate-700">{formatLKR(total)}</strong>{" "}
               to the account below, then upload the slip.
             </p>
-            {bank.name || bank.accountNumber ? (
+            {bank.name || bank.accountName || bank.accountNumber || bank.branch ? (
               <dl className="mt-4 grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
                 {bank.name && <Detail label="Bank" value={bank.name} />}
                 {bank.accountName && <Detail label="Account name" value={bank.accountName} />}
@@ -455,7 +455,9 @@ export function BookingWizard({
               </dl>
             ) : (
               <p className="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-700 ring-1 ring-amber-100">
-                Bank details will also be included in your confirmation email.
+                The organizers haven&apos;t shared their payment account yet —
+                you&apos;ll find it on your personal tracking page (linked in
+                your confirmation email) as soon as it&apos;s available.
               </p>
             )}
 

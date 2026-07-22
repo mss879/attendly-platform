@@ -3,10 +3,10 @@ import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getEventAccess } from "@/lib/supabase/auth";
 import { sendEmail } from "@/lib/email/send";
-import { rejectionEmail, ticketEmail } from "@/lib/email/templates";
+import { rejectionEmail } from "@/lib/email/templates";
 import { portalUrl } from "@/lib/config";
-import { qrPngBuffer } from "@/lib/qr";
-import type { Registration, Ticket } from "@/lib/types";
+import { issueSeatTickets, sendTicketsEmail } from "@/lib/tickets";
+import type { Registration } from "@/lib/types";
 
 const reviewSchema = z.object({
   registrationId: z.uuid(),
@@ -55,16 +55,11 @@ export async function POST(request: Request) {
   const link = portalUrl(registration.access_token);
 
   if (action === "reject") {
-    // Release the booked seats so they become available on the front-end map
-    const { error: seatsDeleteError } = await supabase
-      .from("booked_seats")
-      .delete()
-      .eq("registration_id", registrationId);
-    if (seatsDeleteError) {
-      console.error("[review] reject seat delete failed:", seatsDeleteError);
-      return NextResponse.json({ error: "Could not release seats." }, { status: 500 });
-    }
-
+    // The seats stay held. Rejection asks the attendee to re-upload a clearer
+    // slip, so releasing their seats here would leave them with nothing to be
+    // verified against — and the seats could be resold in the meantime. To
+    // actually free the seats, cancel the booking instead
+    // (DELETE /api/admin/registrations/[id]).
     const { error } = await supabase
       .from("registrations")
       .update({ payment_status: "rejected" })
@@ -83,20 +78,42 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, emailSent: emailResult.sent });
   }
 
-  // action === "verify": issue the ticket, then flip the status.
-  const { data: ticket, error: ticketError } = await supabase
-    .from("tickets")
-    .insert({ registration_id: registrationId })
-    .select()
-    .single<Ticket>();
+  // action === "verify": issue one ticket per booked seat, then flip status.
+  const { data: seatRows, error: seatsError } = await supabase
+    .from("booked_seats")
+    .select("seat_no")
+    .eq("registration_id", registrationId)
+    .order("seat_no")
+    .returns<{ seat_no: string }[]>();
 
-  if (ticketError || !ticket) {
-    // Unique constraint on registration_id guards against double-issuing.
-    console.error("[review] ticket insert failed:", ticketError);
+  // Never guess at the seat list: treating a failed read as "no seats" would
+  // issue a single seat-less admission QR and lock the booking as verified.
+  if (seatsError) {
+    console.error("[review] seat lookup failed:", seatsError);
     return NextResponse.json(
-      { error: "Could not issue the ticket — it may already exist." },
+      { error: "Could not read the booked seats — please try again." },
       { status: 500 }
     );
+  }
+  const seats = (seatRows ?? []).map((s) => s.seat_no);
+
+  if (seats.length === 0) {
+    return NextResponse.json(
+      {
+        error:
+          "This booking holds no seats, so there is nothing to issue a ticket for. Assign seats under “Manage this booking” first.",
+      },
+      { status: 409 }
+    );
+  }
+
+  const { tickets, error: ticketError } = await issueSeatTickets(
+    supabase,
+    registrationId,
+    seats
+  );
+  if (!tickets) {
+    return NextResponse.json({ error: ticketError }, { status: 500 });
   }
 
   const { error: statusError } = await supabase
@@ -108,41 +125,19 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Could not update status." }, { status: 500 });
   }
 
-  const { data: seatRows } = await supabase
-    .from("booked_seats")
-    .select("seat_no")
-    .eq("registration_id", registrationId)
-    .order("seat_no")
-    .returns<{ seat_no: string }[]>();
-
-  const mail = ticketEmail({
+  const emailSent = await sendTicketsEmail({
+    to: registration.email,
     eventName,
     fullName: registration.full_name,
     batch: registration.batch,
-    ticketNumber: ticket.ticket_number,
-    seats: (seatRows ?? []).map((s) => s.seat_no),
+    tickets,
     portalUrl: link,
   });
 
-  let emailSent = false;
-  try {
-    const qrPng = await qrPngBuffer(ticket.qr_token);
-    const emailResult = await sendEmail({
-      to: registration.email,
-      subject: mail.subject,
-      html: mail.html,
-      attachments: [
-        { filename: `attendly-${ticket.ticket_number}.png`, content: qrPng },
-      ],
-    });
-    emailSent = emailResult.sent;
-  } catch (err) {
-    console.error("[review] QR/email failed (ticket still issued):", err);
-  }
-
   return NextResponse.json({
     ok: true,
-    ticketNumber: ticket.ticket_number,
+    ticketNumber: tickets[0].ticket_number,
+    ticketCount: tickets.length,
     emailSent,
   });
 }

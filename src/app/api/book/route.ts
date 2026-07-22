@@ -120,6 +120,8 @@ export async function POST(request: Request) {
   // --- cap unreviewed bookings per email (repeat bookings are welcome) ---
   // ilike with wildcards escaped = case-insensitive match on legacy
   // mixed-case rows too; new rows are stored lowercase.
+  // Organizer-issued tickets are created 'verified', so they fall outside
+  // this window and never lock a comped guest out of buying their own seats.
   const emailPattern = email.replace(/[\\%_]/g, "\\$&");
   const { count: activeCount, error: lookupError } = await supabase
     .from("registrations")
@@ -264,6 +266,7 @@ export async function POST(request: Request) {
     total: seats.length * seating.pricePerSeat,
     reference: registration.id.slice(0, 8).toUpperCase(),
     portalUrl: link,
+    bank: event.bank,
   });
   const emailResult = await sendEmail({ to: email, subject, html });
 

@@ -9,6 +9,7 @@ import { SlipUploadForm } from "@/components/SlipUploadForm";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { formatLKR } from "@/lib/seating";
 import { qrDataUrl } from "@/lib/qr";
+import { sortTickets } from "@/lib/tickets";
 import type { EventRow, PaymentSlip, Registration, Ticket } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -62,16 +63,20 @@ export default async function PortalPage({
   ]);
   const seats = (seatRows ?? []).map((s) => s.seat_no);
 
-  let ticket: Ticket | null = null;
-  let qrImage: string | null = null;
+  // One ticket per seat — each carries its own QR code.
+  let issuedTickets: { ticket: Ticket; qrImage: string }[] = [];
   if (registration.payment_status === "verified") {
     const { data } = await supabase
       .from("tickets")
       .select("*")
       .eq("registration_id", registration.id)
-      .maybeSingle<Ticket>();
-    ticket = data;
-    if (ticket) qrImage = await qrDataUrl(ticket.qr_token);
+      .returns<Ticket[]>();
+    issuedTickets = await Promise.all(
+      sortTickets(data ?? []).map(async (ticket) => ({
+        ticket,
+        qrImage: await qrDataUrl(ticket.qr_token),
+      }))
+    );
   }
 
   const latestSlip = slips?.[0] ?? null;
@@ -131,50 +136,76 @@ export default async function PortalPage({
             )}
           </section>
 
-          {/* Verified: the ticket */}
-          {status === "verified" && ticket && qrImage && (
-            <section className="relative overflow-hidden rounded-2xl bg-white p-5 text-center shadow-sm ring-1 ring-black/[0.04] sm:p-6">
-              <span
-                aria-hidden
-                className="pointer-events-none absolute inset-0"
-                style={{
-                  background:
-                    "radial-gradient(120% 120% at 100% 0%, rgba(52,211,153,0.25) 0%, rgba(255,255,255,0) 55%)",
-                }}
-              />
-              <div className="relative">
-                <h2 className="text-[11px] font-bold uppercase tracking-wider text-emerald-600">
-                  Your ticket
-                </h2>
-                <p className="mt-1 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
-                  {ticket.ticket_number}
+          {/* Verified: one ticket + QR per seat */}
+          {status === "verified" && issuedTickets.length > 0 && (
+            <>
+              {issuedTickets.length > 1 && (
+                <p className="rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-800 ring-1 ring-emerald-100">
+                  <span className="font-bold">
+                    You have {issuedTickets.length} tickets — one per seat.
+                  </span>{" "}
+                  Each seat has its own QR code and is scanned separately at the
+                  gate, so give every person their own QR.
                 </p>
-                {/* Data-URL QR: sized to the screen but capped so it stays crisp and
-                    scannable, even on the smallest phones */}
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={qrImage}
-                  alt={`QR code for ticket ${ticket.ticket_number}`}
-                  className="mx-auto mt-4 aspect-square w-full max-w-[16rem] rounded-xl shadow-sm ring-1 ring-black/[0.06]"
-                />
-                <p className="mt-3 text-sm text-slate-500">
-                  Show this QR code at the entrance to check in.
-                </p>
-                <a
-                  href={qrImage}
-                  download={`attendly-${ticket.ticket_number}.png`}
-                  className="mt-4 inline-block rounded-full bg-slate-900 px-6 py-2.5 text-sm font-bold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-800 hover:shadow-md"
+              )}
+
+              {issuedTickets.map(({ ticket, qrImage }) => (
+                <section
+                  key={ticket.id}
+                  className="relative overflow-hidden rounded-2xl bg-white p-5 text-center shadow-sm ring-1 ring-black/[0.04] sm:p-6"
                 >
-                  Download QR code
-                </a>
-                {ticket.checked_in_at && (
-                  <p className="mt-4 rounded-xl bg-emerald-100/80 px-3 py-2 text-sm font-semibold text-emerald-700">
-                    ✓ Checked in at{" "}
-                    {new Date(ticket.checked_in_at).toLocaleString()}
-                  </p>
-                )}
-              </div>
-            </section>
+                  <span
+                    aria-hidden
+                    className="pointer-events-none absolute inset-0"
+                    style={{
+                      background:
+                        "radial-gradient(120% 120% at 100% 0%, rgba(52,211,153,0.25) 0%, rgba(255,255,255,0) 55%)",
+                    }}
+                  />
+                  <div className="relative">
+                    <h2 className="text-[11px] font-bold uppercase tracking-wider text-emerald-600">
+                      {ticket.seat_no ? `Seat ${ticket.seat_no}` : "Your ticket"}
+                    </h2>
+                    <p className="mt-1 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+                      {ticket.ticket_number}
+                    </p>
+                    {/* Data-URL QR: sized to the screen but capped so it stays crisp and
+                        scannable, even on the smallest phones */}
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={qrImage}
+                      alt={
+                        ticket.seat_no
+                          ? `QR code for seat ${ticket.seat_no}, ticket ${ticket.ticket_number}`
+                          : `QR code for ticket ${ticket.ticket_number}`
+                      }
+                      className="mx-auto mt-4 aspect-square w-full max-w-[16rem] rounded-xl shadow-sm ring-1 ring-black/[0.06]"
+                    />
+                    <p className="mt-3 text-sm text-slate-500">
+                      Show this QR code at the entrance to check in
+                      {ticket.seat_no ? ` for seat ${ticket.seat_no}` : ""}.
+                    </p>
+                    <a
+                      href={qrImage}
+                      download={
+                        ticket.seat_no
+                          ? `attendly-${ticket.seat_no}-${ticket.ticket_number}.png`
+                          : `attendly-${ticket.ticket_number}.png`
+                      }
+                      className="mt-4 inline-block rounded-full bg-slate-900 px-6 py-2.5 text-sm font-bold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-800 hover:shadow-md"
+                    >
+                      Download QR code
+                    </a>
+                    {ticket.checked_in_at && (
+                      <p className="mt-4 rounded-xl bg-emerald-100/80 px-3 py-2 text-sm font-semibold text-emerald-700">
+                        ✓ Checked in at{" "}
+                        {new Date(ticket.checked_in_at).toLocaleString()}
+                      </p>
+                    )}
+                  </div>
+                </section>
+              ))}
+            </>
           )}
 
           {/* Not yet verified: payment instructions + upload */}
@@ -227,6 +258,13 @@ export default async function PortalPage({
                   )}
                   {bank.branch && <Detail label="Branch" value={bank.branch} />}
                 </dl>
+                {!(bank.name || bank.accountName || bank.accountNumber || bank.branch) && (
+                  <p className="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-700 ring-1 ring-amber-100">
+                    The organizers haven&apos;t shared the account details yet —
+                    they&apos;ll appear here as soon as they&apos;re available,
+                    so check back soon.
+                  </p>
+                )}
 
                 <h2 className="mt-6 flex items-center gap-2.5 text-base font-bold text-slate-900">
                   <span className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-orange-500 to-red-500 text-xs font-bold text-white">

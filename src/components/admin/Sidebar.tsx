@@ -35,6 +35,16 @@ function buildNav(base: string): { manage: NavItem[]; gate: NavItem[] } {
         ),
       },
       {
+        href: `${base}/custom-tickets`,
+        label: "Custom tickets",
+        icon: (
+          <svg className={iconClass} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+            <path d="M3.5 9.2V7a1.5 1.5 0 0 1 1.5-1.5h14A1.5 1.5 0 0 1 20.5 7v2.2a2.8 2.8 0 0 0 0 5.6V17a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 17v-2.2a2.8 2.8 0 0 0 0-5.6Z" strokeLinejoin="round" />
+            <path d="M14 9.5v5" strokeLinecap="round" strokeDasharray="1.5 2.5" />
+          </svg>
+        ),
+      },
+      {
         href: `${base}/settings`,
         label: "Event settings",
         icon: (

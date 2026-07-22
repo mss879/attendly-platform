@@ -15,22 +15,31 @@ export default async function CheckinsPage({
   const { event } = await requireEventAccess(eventId);
   const supabase = createAdminClient();
 
-  const [{ data: checkins }, { count: totalTickets }] = await Promise.all([
-    supabase
-      .from("tickets")
-      .select("*, registrations!inner(*)")
-      .eq("registrations.event_id", event.id)
-      .not("checked_in_at", "is", null)
-      .order("checked_in_at", { ascending: false })
-      .limit(1000)
-      .returns<TicketWithRegistration[]>(),
-    supabase
-      .from("tickets")
-      .select("id, registrations!inner(event_id)", { count: "exact", head: true })
-      .eq("registrations.event_id", event.id),
-  ]);
+  const [{ data: checkins }, { count: totalTickets }, { count: checkedInTotal }] =
+    await Promise.all([
+      supabase
+        .from("tickets")
+        .select("*, registrations!inner(*)")
+        .eq("registrations.event_id", event.id)
+        .not("checked_in_at", "is", null)
+        .order("checked_in_at", { ascending: false })
+        .limit(1000)
+        .returns<TicketWithRegistration[]>(),
+      supabase
+        .from("tickets")
+        .select("id, registrations!inner(event_id)", { count: "exact", head: true })
+        .eq("registrations.event_id", event.id),
+      // Counted separately: the list above is capped at 1000 rows, and one
+      // ticket per seat makes that cap reachable at a real event.
+      supabase
+        .from("tickets")
+        .select("id, registrations!inner(event_id)", { count: "exact", head: true })
+        .eq("registrations.event_id", event.id)
+        .not("checked_in_at", "is", null),
+    ]);
 
-  const checkedInCount = checkins?.length ?? 0;
+  const checkedInCount = checkedInTotal ?? 0;
+  const listed = checkins?.length ?? 0;
 
   return (
     <FadeIn>
@@ -44,9 +53,15 @@ export default async function CheckinsPage({
           </p>
         </div>
         <p className="rounded-full bg-orange-100/80 px-4 py-1.5 text-sm font-bold text-orange-700">
-          {checkedInCount} / {totalTickets ?? 0} inside
+          {checkedInCount} / {totalTickets ?? 0} seats inside
         </p>
       </div>
+
+      {listed < checkedInCount && (
+        <p className="mb-4 rounded-xl bg-slate-50 px-4 py-2.5 text-sm text-slate-600">
+          Showing the {listed} most recent check-ins of {checkedInCount}.
+        </p>
+      )}
 
       {!checkins || checkins.length === 0 ? (
         <p className="rounded-2xl bg-white px-4 py-10 text-center text-sm text-slate-400 shadow-sm ring-1 ring-black/[0.04]">
@@ -76,8 +91,15 @@ export default async function CheckinsPage({
                       )}
                     </span>
                   </span>
-                  <span className="shrink-0 font-mono text-sm font-semibold text-orange-700">
-                    {t.ticket_number}
+                  <span className="shrink-0 text-right">
+                    {t.seat_no && (
+                      <span className="block font-mono text-base font-bold text-slate-900">
+                        {t.seat_no}
+                      </span>
+                    )}
+                    <span className="block font-mono text-xs font-semibold text-orange-700">
+                      {t.ticket_number}
+                    </span>
                   </span>
                 </div>
                 <p className="mt-2 text-xs text-slate-500">
@@ -100,6 +122,7 @@ export default async function CheckinsPage({
                   {event.collect_batch && (
                     <th className="px-5 py-3.5 font-semibold">Batch</th>
                   )}
+                  <th className="px-5 py-3.5 font-semibold">Seat</th>
                   <th className="px-5 py-3.5 font-semibold">Ticket</th>
                 </tr>
               </thead>
@@ -127,6 +150,9 @@ export default async function CheckinsPage({
                         </span>
                       </td>
                     )}
+                    <td className="px-5 py-3.5 font-mono font-bold text-slate-900">
+                      {t.seat_no ?? "—"}
+                    </td>
                     <td className="px-5 py-3.5 font-mono font-semibold text-orange-700">
                       {t.ticket_number}
                     </td>

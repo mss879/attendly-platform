@@ -122,6 +122,89 @@ export const eventDraftSchema = z.object({
 
 export type EventDraftInput = z.infer<typeof eventDraftSchema>;
 
+/**
+ * Organizer-issued ticket payload. Unlike a public booking there is no
+ * payment slip and no per-booking seat cap — the organizer is handing out
+ * seats directly — but the seat ids are still validated against the event's
+ * seating plan by the route.
+ */
+export const customTicketSchema = z.object({
+  fullName: z.string().trim().min(2, "Please enter the guest's full name").max(120),
+  email: z.email("Please enter a valid email address").trim().max(200),
+  phone: z
+    .string()
+    .trim()
+    .max(32)
+    .optional()
+    .default("")
+    .refine(
+      (v) => v === "" || /^\+?[0-9()\s-]{7,20}$/.test(v),
+      "Please enter a valid phone number, or leave it blank"
+    ),
+  batch: z
+    .string()
+    .trim()
+    .max(4)
+    .optional()
+    .default("")
+    .refine(
+      (v) => v === "" || /^(19|20)\d{2}$/.test(v),
+      "Please pick a valid batch year, or leave it blank"
+    ),
+  seats: z
+    .array(z.string().trim())
+    .min(1, "Please select at least one seat")
+    .max(50, "You can issue up to 50 seats at a time")
+    .refine((arr) => new Set(arr).size === arr.length, "Duplicate seats selected"),
+  notify: z.boolean().optional().default(true),
+});
+
+export type CustomTicketInput = z.infer<typeof customTicketSchema>;
+
+/**
+ * Organizer edit of an existing booking. Seats are optional — omit them to
+ * leave the seat assignment untouched. Like custom tickets, the organizer is
+ * not bound by the public per-booking seat cap.
+ */
+export const registrationEditSchema = z.object({
+  fullName: z.string().trim().min(2, "Please enter the attendee's full name").max(120),
+  email: z.email("Please enter a valid email address").trim().max(200),
+  phone: z
+    .string()
+    .trim()
+    .max(32)
+    .optional()
+    .default("")
+    .refine(
+      (v) => v === "" || /^\+?[0-9()\s-]{7,20}$/.test(v),
+      "Please enter a valid phone number, or leave it blank"
+    ),
+  batch: z
+    .string()
+    .trim()
+    .max(4)
+    .optional()
+    .default("")
+    .refine(
+      (v) => v === "" || /^(19|20)\d{2}$/.test(v),
+      "Please pick a valid batch year, or leave it blank"
+    ),
+  seats: z
+    .array(z.string().trim())
+    .max(50, "A booking can hold up to 50 seats")
+    .refine((arr) => new Set(arr).size === arr.length, "Duplicate seats selected")
+    .optional(),
+  /** Email the attendee their updated tickets when the seats change. */
+  notify: z.boolean().optional().default(true),
+});
+
+export type RegistrationEditInput = z.infer<typeof registrationEditSchema>;
+
+/** Side-effect actions on an existing booking. */
+export const registrationActionSchema = z.object({
+  action: z.enum(["resend", "unverify"]),
+});
+
 /** Organizer signup payload (/api/host/signup). */
 export const hostSignupSchema = z.object({
   fullName: z.string().trim().min(2, "Please enter your name").max(120),

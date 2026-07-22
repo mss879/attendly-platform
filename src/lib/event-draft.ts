@@ -11,7 +11,8 @@ export function draftToRow(draft: EventDraftInput) {
     banner_url: draft.bannerUrl || null,
     edition: draft.edition || null,
     subtitle: draft.subtitle || null,
-    tagline: [] as string[],
+    // tagline is deliberately absent: the draft form doesn't edit it, and
+    // including it here would wipe the stored value on every update.
     description: draft.description,
     venue: draft.venue,
     schedule: draft.schedule,

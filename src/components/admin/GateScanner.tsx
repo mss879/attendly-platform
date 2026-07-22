@@ -10,6 +10,7 @@ type ScanResult =
         name: string;
         batch: string;
         ticketNumber: string;
+        seatNo: string | null;
         checkedInAt: string | null;
       };
     }
@@ -74,8 +75,13 @@ export function GateScanner({ eventId }: { eventId: string }) {
 
   async function handleManualSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const form = new FormData(e.currentTarget);
-    const raw = String(form.get("ticketNumber") ?? "").trim().toUpperCase();
+    // Hold onto the element: React nulls out currentTarget across the await,
+    // so resetting afterwards would silently never happen and the previous
+    // seat's number would linger in the field.
+    const formEl = e.currentTarget;
+    const raw = String(new FormData(formEl).get("ticketNumber") ?? "")
+      .trim()
+      .toUpperCase();
     if (!raw) return;
     const normalized = raw.startsWith("TKT-") ? raw : `TKT-${raw}`;
     if (!/^TKT-\d+$/.test(normalized)) {
@@ -87,7 +93,7 @@ export function GateScanner({ eventId }: { eventId: string }) {
     inFlight.current = true;
     await checkIn({ ticketNumber: normalized });
     setManualBusy(false);
-    e.currentTarget?.reset?.();
+    formEl.reset();
   }
 
   return (
@@ -107,13 +113,21 @@ export function GateScanner({ eventId }: { eventId: string }) {
               <p className="mt-2 text-xl font-bold text-emerald-800">
                 Welcome, {result.participant.name}!
               </p>
-              <p className="mt-1 text-sm font-semibold text-emerald-700">
+              {result.participant.seatNo && (
+                <p className="mt-3 inline-block rounded-xl bg-emerald-600 px-5 py-2 font-mono text-3xl font-bold tracking-tight text-white">
+                  {result.participant.seatNo}
+                </p>
+              )}
+              <p className="mt-2 text-sm font-semibold text-emerald-700">
                 {result.participant.batch
                   ? `Class of ${result.participant.batch} · `
                   : ""}
                 {result.participant.ticketNumber}
               </p>
-              <p className="mt-1 text-xs text-emerald-600">Checked in successfully.</p>
+              <p className="mt-1 text-xs text-emerald-600">
+                Checked in successfully
+                {result.participant.seatNo ? " — this seat only." : "."}
+              </p>
             </>
           )}
           {result.result === "already" && (
@@ -122,7 +136,12 @@ export function GateScanner({ eventId }: { eventId: string }) {
               <p className="mt-2 text-xl font-bold text-red-800">
                 ALREADY CHECKED IN
               </p>
-              <p className="mt-1 text-sm font-semibold text-red-700">
+              {result.participant.seatNo && (
+                <p className="mt-3 inline-block rounded-xl bg-red-600 px-5 py-2 font-mono text-3xl font-bold tracking-tight text-white">
+                  {result.participant.seatNo}
+                </p>
+              )}
+              <p className="mt-2 text-sm font-semibold text-red-700">
                 {result.participant.name} ·{" "}
                 {result.participant.batch
                   ? `Class of ${result.participant.batch} · `
