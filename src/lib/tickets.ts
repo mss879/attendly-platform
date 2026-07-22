@@ -60,7 +60,7 @@ export async function sendTicketsEmail({
   to,
   eventName,
   fullName,
-  batch,
+  batchLabel,
   tickets,
   portalUrl,
   custom = false,
@@ -68,7 +68,8 @@ export async function sendTicketsEmail({
   to: string;
   eventName: string;
   fullName: string;
-  batch: string;
+  /** Already-formatted batch text ("Class of 2005" / "Non RC" / ""). */
+  batchLabel: string;
   tickets: Ticket[];
   portalUrl: string;
   custom?: boolean;
@@ -76,7 +77,7 @@ export async function sendTicketsEmail({
   const mail = ticketEmail({
     eventName,
     fullName,
-    batch,
+    batchLabel,
     tickets: tickets.map((t) => ({
       ticketNumber: t.ticket_number,
       seatNo: t.seat_no,

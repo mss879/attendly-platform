@@ -81,6 +81,7 @@ export function EventForm({
     initial?.bank ?? { name: "", accountName: "", accountNumber: "", branch: "" }
   );
   const [collectBatch, setCollectBatch] = useState(initial?.collect_batch ?? false);
+  const [nonBatchLabel, setNonBatchLabel] = useState(initial?.non_batch_label ?? "");
 
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -135,6 +136,7 @@ export function EventForm({
       },
       bank,
       collectBatch,
+      nonBatchLabel: collectBatch ? nonBatchLabel.trim() : "",
     };
 
     setSaving(true);
@@ -612,6 +614,28 @@ export function EventForm({
             (&ldquo;Class of&rdquo;) from attendees — for alumni events.
           </span>
         </label>
+
+        {collectBatch && (
+          <div>
+            <label htmlFor="ev-non-batch" className={labelClass}>
+              Option for attendees outside the batch{" "}
+              <span className="font-normal text-slate-400">(optional)</span>
+            </label>
+            <input
+              id="ev-non-batch"
+              maxLength={40}
+              placeholder="e.g. Non RC"
+              className={inputClass}
+              value={nonBatchLabel}
+              onChange={(e) => setNonBatchLabel(e.target.value)}
+            />
+            <p className="mt-1 text-xs text-slate-400">
+              Adds this choice beside the batch years, for family, friends and
+              guests who were never part of the cohort. Leave empty to require
+              a year from everyone.
+            </p>
+          </div>
+        )}
       </section>
 
       {/* Bank details */}

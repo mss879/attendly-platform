@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getEventAccess } from "@/lib/supabase/auth";
+import { formatBatch } from "@/lib/batch";
 import type { Registration, Ticket } from "@/lib/types";
 
 const checkinSchema = z
@@ -20,10 +21,11 @@ const checkinSchema = z
 
 type TicketWithRegistration = Ticket & { registrations: Registration };
 
-function participant(t: TicketWithRegistration) {
+function participant(t: TicketWithRegistration, nonBatchLabel: string | null) {
   return {
     name: t.registrations.full_name,
-    batch: t.registrations.batch,
+    // Formatted here: the gate screen has no access to the event's wording.
+    batch: formatBatch(t.registrations.batch, nonBatchLabel),
     ticketNumber: t.ticket_number,
     seatNo: t.seat_no,
     checkedInAt: t.checked_in_at,
@@ -93,13 +95,16 @@ export async function POST(request: Request) {
   if (claimed) {
     return NextResponse.json({
       result: "ok",
-      participant: participant({ ...claimed, registrations: ticket.registrations }),
+      participant: participant(
+        { ...claimed, registrations: ticket.registrations },
+        access.event.non_batch_label
+      ),
     });
   }
 
   // Nothing claimed — the ticket exists, so it was already checked in.
   return NextResponse.json({
     result: "already",
-    participant: participant(ticket),
+    participant: participant(ticket, access.event.non_batch_label),
   });
 }

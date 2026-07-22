@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getAdminUser, getEventAccess } from "@/lib/supabase/auth";
 import { registrationActionSchema, registrationEditSchema } from "@/lib/validation";
 import { validSeatIds } from "@/lib/seating";
+import { allowsNonBatch, formatBatch, NON_BATCH_VALUE } from "@/lib/batch";
 import { portalUrl } from "@/lib/config";
 import { sendEmail } from "@/lib/email/send";
 import { bookingEmail } from "@/lib/email/templates";
@@ -126,6 +127,14 @@ export async function PATCH(
     return NextResponse.json({ error: message }, { status: 400 });
   }
   const { fullName, email, phone, batch, notify } = parsed.data;
+
+  // The non-cohort option only exists where the organizer has named it.
+  if (batch === NON_BATCH_VALUE && !allowsNonBatch(event.non_batch_label)) {
+    return NextResponse.json(
+      { error: "This event doesn't offer a non-batch option." },
+      { status: 400 }
+    );
+  }
 
   const supabase = createAdminClient();
   const verified = registration.payment_status === "verified";
@@ -277,7 +286,7 @@ export async function PATCH(
         to: email,
         eventName: event.name,
         fullName,
-        batch,
+        batchLabel: formatBatch(batch, event.non_batch_label),
         tickets: fresh,
         portalUrl: portalUrl(registration.access_token),
       });
@@ -327,7 +336,7 @@ export async function POST(
         to: registration.email,
         eventName: event.name,
         fullName: registration.full_name,
-        batch: registration.batch,
+        batchLabel: formatBatch(registration.batch, event.non_batch_label),
         tickets,
         portalUrl: link,
         custom: registration.source === "custom",
@@ -339,7 +348,7 @@ export async function POST(
     const mail = bookingEmail({
       eventName: event.name,
       fullName: registration.full_name,
-      batch: registration.batch,
+      batchLabel: formatBatch(registration.batch, event.non_batch_label),
       seats,
       total: seats.length * event.seating.pricePerSeat,
       reference: registration.id.slice(0, 8).toUpperCase(),

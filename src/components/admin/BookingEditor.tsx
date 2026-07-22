@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { SeatMap } from "@/components/book/SeatMap";
+import { NON_BATCH_VALUE } from "@/lib/batch";
 import { formatLKR } from "@/lib/seating";
 import type { PaymentStatus, SeatingConfig } from "@/lib/types";
 
@@ -26,6 +27,7 @@ export function BookingEditor({
   currentSeats,
   otherTakenSeats,
   checkedInSeats,
+  nonBatchLabel = "",
 }: {
   registrationId: string;
   eventId: string;
@@ -39,6 +41,8 @@ export function BookingEditor({
   otherTakenSeats: string[];
   /** Seats already scanned at the gate — cannot be removed. */
   checkedInSeats: string[];
+  /** Label for the non-cohort option, or "" when the event has none. */
+  nonBatchLabel?: string;
 }) {
   const router = useRouter();
 
@@ -245,6 +249,9 @@ export function BookingEditor({
                 onChange={(e) => setBatch(e.target.value)}
               >
                 <option value="">Not specified</option>
+                {nonBatchLabel && (
+                  <option value={NON_BATCH_VALUE}>{nonBatchLabel}</option>
+                )}
                 {years.map((y) => (
                   <option key={y} value={y}>
                     Class of {y}

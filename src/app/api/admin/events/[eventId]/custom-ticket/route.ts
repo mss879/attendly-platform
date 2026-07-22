@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getEventAccess } from "@/lib/supabase/auth";
 import { customTicketSchema } from "@/lib/validation";
 import { validSeatIds } from "@/lib/seating";
+import { allowsNonBatch, formatBatch, NON_BATCH_VALUE } from "@/lib/batch";
 import { portalUrl } from "@/lib/config";
 import { issueSeatTickets, sendTicketsEmail } from "@/lib/tickets";
 
@@ -35,6 +36,14 @@ export async function POST(
     return NextResponse.json({ error: message }, { status: 400 });
   }
   const { fullName, email, phone, batch, notify } = parsed.data;
+
+  // The non-cohort option only exists where the organizer has named it.
+  if (batch === NON_BATCH_VALUE && !allowsNonBatch(event.non_batch_label)) {
+    return NextResponse.json(
+      { error: "This event doesn't offer a non-batch option." },
+      { status: 400 }
+    );
+  }
 
   // Seats must exist in this event's plan.
   const validIds = validSeatIds(event.seating);
@@ -142,7 +151,7 @@ export async function POST(
         to: email,
         eventName: event.name,
         fullName,
-        batch,
+        batchLabel: formatBatch(batch, event.non_batch_label),
         tickets,
         portalUrl: link,
         custom: true,

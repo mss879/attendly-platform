@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { SeatMap } from "@/components/book/SeatMap";
+import { NON_BATCH_VALUE } from "@/lib/batch";
 import { formatLKR } from "@/lib/seating";
 import type { SeatingConfig } from "@/lib/types";
 
@@ -26,12 +27,15 @@ export function CustomTicketForm({
   collectBatch,
   years,
   initialTakenSeats,
+  nonBatchLabel = "",
 }: {
   eventId: string;
   seating: SeatingConfig;
   collectBatch: boolean;
   years: string[];
   initialTakenSeats: string[];
+  /** Label for the non-cohort option, or "" when the event has none. */
+  nonBatchLabel?: string;
 }) {
   const router = useRouter();
 
@@ -251,6 +255,9 @@ export function CustomTicketForm({
               onChange={(e) => setBatch(e.target.value)}
             >
               <option value="">Not specified</option>
+              {nonBatchLabel && (
+                <option value={NON_BATCH_VALUE}>{nonBatchLabel}</option>
+              )}
               {years.map((y) => (
                 <option key={y} value={y}>
                   Class of {y}

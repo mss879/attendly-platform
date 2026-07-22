@@ -1,10 +1,13 @@
 import { z } from "zod";
+import { NON_BATCH_VALUE, isValidBatch } from "./batch";
 
 /**
  * Attendee details schema. The batch ("Class of") field is per-event:
  * required when the event collects it, absent (stored as "") otherwise.
+ * Events that offer a non-cohort option (e.g. "Non RC") also accept the
+ * NON_BATCH_VALUE sentinel in place of a year.
  */
-export function registrationSchema(collectBatch: boolean) {
+export function registrationSchema(collectBatch: boolean, allowNonBatch = false) {
   return z.object({
     fullName: z.string().trim().min(2, "Please enter your full name").max(120),
     email: z.email("Please enter a valid email address").trim().max(200),
@@ -13,7 +16,13 @@ export function registrationSchema(collectBatch: boolean) {
       .trim()
       .regex(/^\+?[0-9()\s-]{7,20}$/, "Please enter a valid phone number"),
     batch: collectBatch
-      ? z.string().trim().regex(/^(19|20)\d{2}$/, "Please select your batch")
+      ? z
+          .string()
+          .trim()
+          .refine(
+            (v) => isValidBatch(v, allowNonBatch),
+            "Please select your batch"
+          )
       : z
           .string()
           .trim()
@@ -118,6 +127,11 @@ export const eventDraftSchema = z.object({
     branch: z.string().trim().max(120).optional().default(""),
   }),
   collectBatch: z.boolean().optional().default(false),
+  /**
+   * Names the "outside the batch" option (e.g. "Non RC") and switches it on.
+   * Empty = the event doesn't offer one.
+   */
+  nonBatchLabel: z.string().trim().max(40).optional().default(""),
 });
 
 export type EventDraftInput = z.infer<typeof eventDraftSchema>;
@@ -144,11 +158,13 @@ export const customTicketSchema = z.object({
   batch: z
     .string()
     .trim()
-    .max(4)
+    .max(20)
     .optional()
     .default("")
+    // The sentinel is accepted here; whether this event actually offers the
+    // non-cohort option is checked by the route, which knows the event.
     .refine(
-      (v) => v === "" || /^(19|20)\d{2}$/.test(v),
+      (v) => v === "" || v === NON_BATCH_VALUE || /^(19|20)\d{2}$/.test(v),
       "Please pick a valid batch year, or leave it blank"
     ),
   seats: z
@@ -182,11 +198,13 @@ export const registrationEditSchema = z.object({
   batch: z
     .string()
     .trim()
-    .max(4)
+    .max(20)
     .optional()
     .default("")
+    // The sentinel is accepted here; whether this event actually offers the
+    // non-cohort option is checked by the route, which knows the event.
     .refine(
-      (v) => v === "" || /^(19|20)\d{2}$/.test(v),
+      (v) => v === "" || v === NON_BATCH_VALUE || /^(19|20)\d{2}$/.test(v),
       "Please pick a valid batch year, or leave it blank"
     ),
   seats: z
