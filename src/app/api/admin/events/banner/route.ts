@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAuthContext } from "@/lib/supabase/auth";
-import { BANNER_ALLOWED_TYPES, BANNER_MAX_BYTES } from "@/lib/validation";
+import { BANNER_MAX_BYTES } from "@/lib/validation";
+import { validateUpload } from "@/lib/upload";
 
 export async function POST(request: Request) {
   const ctx = await getAuthContext();
@@ -21,33 +22,24 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid request." }, { status: 400 });
   }
 
-  let ext = BANNER_ALLOWED_TYPES[file.type];
-  if (!ext && file.name) {
-    const fileExt = file.name.split(".").pop()?.toLowerCase();
-    if (fileExt && ["jpg", "jpeg", "png", "webp"].includes(fileExt)) {
-      ext = fileExt === "jpeg" ? "jpg" : fileExt;
-    }
-  }
-  if (!ext) {
-    return NextResponse.json(
-      { error: "Only JPG, PNG, or WebP images are accepted for the event banner." },
-      { status: 400 }
-    );
-  }
-  if (file.size === 0 || file.size > BANNER_MAX_BYTES) {
-    return NextResponse.json(
-      { error: "The banner image must be between 1 byte and 5 MB." },
-      { status: 400 }
-    );
+  // Public bucket: the stored content type MUST come from the sniffed file
+  // content, or a renamed HTML file becomes a hosted page on the storage URL.
+  const upload = await validateUpload(file, {
+    allowedExts: ["jpg", "png", "webp"],
+    maxBytes: BANNER_MAX_BYTES,
+    typeError: "Only JPG, PNG, or WebP images are accepted for the event banner.",
+    sizeError: "The banner image must be between 1 byte and 5 MB.",
+  });
+  if (!upload.ok) {
+    return NextResponse.json({ error: upload.error }, { status: 400 });
   }
 
   const supabase = createAdminClient();
-  const storagePath = `${ctx.user.id}/${Date.now()}.${ext}`;
-  const bytes = Buffer.from(await file.arrayBuffer());
+  const storagePath = `${ctx.user.id}/${Date.now()}.${upload.ext}`;
 
   const { error: uploadError } = await supabase.storage
     .from("event-banners")
-    .upload(storagePath, bytes, { contentType: file.type });
+    .upload(storagePath, upload.bytes, { contentType: upload.contentType });
 
   if (uploadError) {
     console.error("[banner] storage upload failed:", uploadError);

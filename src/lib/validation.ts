@@ -35,18 +35,32 @@ export const SLIP_ALLOWED_TYPES: Record<string, string> = {
 };
 
 export const BANNER_MAX_BYTES = 5 * 1024 * 1024; // 5 MB
-export const BANNER_ALLOWED_TYPES: Record<string, string> = {
-  "image/jpeg": "jpg",
-  "image/png": "png",
-  "image/webp": "webp",
-};
 
 const SLUG_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+
+/** Image sources may be empty, a site-local path ("/...") or an http(s) URL. */
+function imageSource(max: number) {
+  return z
+    .string()
+    .trim()
+    .max(max)
+    .refine((v) => {
+      if (v === "" || v.startsWith("/")) return true;
+      try {
+        const url = new URL(v);
+        return url.protocol === "http:" || url.protocol === "https:";
+      } catch {
+        return false;
+      }
+    }, "Image must be a local path or an http(s) link")
+    .optional()
+    .default("");
+}
 
 /** "Create event" wizard payload (organizer console). */
 export const eventDraftSchema = z.object({
   name: z.string().trim().min(3, "Please enter the event name").max(120),
-  bannerUrl: z.string().trim().max(500).optional().default(""),
+  bannerUrl: imageSource(500),
   slug: z
     .string()
     .trim()
@@ -75,12 +89,12 @@ export const eventDraftSchema = z.object({
       home: z.object({
         name: z.string().trim().min(1).max(80),
         city: z.string().trim().max(80).optional().default(""),
-        crest: z.string().trim().max(300).optional().default(""),
+        crest: imageSource(300),
       }),
       away: z.object({
         name: z.string().trim().min(1).max(80),
         city: z.string().trim().max(80).optional().default(""),
-        crest: z.string().trim().max(300).optional().default(""),
+        crest: imageSource(300),
       }),
     })
     .nullable()
