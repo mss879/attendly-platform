@@ -110,11 +110,14 @@ export async function POST(request: Request) {
 
   const { fullName, email, phone, batch } = parsedDetails.data;
 
-  // --- one booking per email per event ---
+  // --- one self-service booking per email per event ---
+  // Scoped to source 'booking': an organizer-issued ticket must not lock the
+  // guest out of buying seats of their own.
   const { data: existing, error: lookupError } = await supabase
     .from("registrations")
     .select("id")
     .eq("event_id", event.id)
+    .eq("source", "booking")
     .ilike("email", email)
     .limit(1);
   if (lookupError) {
@@ -255,6 +258,7 @@ export async function POST(request: Request) {
     total: seats.length * seating.pricePerSeat,
     reference: registration.id.slice(0, 8).toUpperCase(),
     portalUrl: link,
+    bank: event.bank,
   });
   const emailResult = await sendEmail({ to: email, subject, html });
 

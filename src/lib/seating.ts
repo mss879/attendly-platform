@@ -23,6 +23,38 @@ export function validSeatIds(seating: SeatingConfig): Set<string> {
   return ids;
 }
 
+/**
+ * Why this seating change can't be applied to an event that already has
+ * bookings — or null when it is safe.
+ *
+ * Growing the plan (more rows, more seats per row, different aisles) is fine:
+ * nobody's seat moves. What is never allowed is repricing a sold seat, or a
+ * layout that no longer contains one. The second check also catches the
+ * subtle case where crossing 99 seats per row widens the zero-padding and
+ * silently renumbers every existing seat (A01 -> A001).
+ */
+export function seatingChangeBlocker(
+  current: SeatingConfig,
+  next: SeatingConfig,
+  bookedSeats: string[]
+): string | null {
+  if (bookedSeats.length === 0) return null;
+
+  if (next.pricePerSeat !== current.pricePerSeat) {
+    return "Seats have already been booked — the price per seat can't change.";
+  }
+
+  const valid = validSeatIds(next);
+  const orphaned = bookedSeats.filter((seat) => !valid.has(seat));
+  if (orphaned.length === 0) return null;
+
+  const shown = orphaned.slice(0, 6).join(", ");
+  const more = orphaned.length > 6 ? ` and ${orphaned.length - 6} more` : "";
+  return seatPad(next) !== seatPad(current)
+    ? `Going to ${next.seatsPerRow} seats per row would renumber every seat (A01 becomes A001), which breaks the ${bookedSeats.length} seats already booked.`
+    : `That layout would remove seats people have already booked (${shown}${more}). Grow the plan instead of shrinking it.`;
+}
+
 export function formatLKR(amount: number): string {
   return `Rs ${amount.toLocaleString("en-LK")}`;
 }

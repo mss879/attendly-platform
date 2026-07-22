@@ -31,12 +31,19 @@ Multi-event ticketing **platform**: organizers apply to host events; attendees b
 ### 1. Supabase
 
 1. Create a project at [supabase.com](https://supabase.com).
-2. In the **SQL Editor**, run the five migration files **in order**:
+2. In the **SQL Editor**, run the migration files **in order**:
    - `supabase/migrations/0001_registrations.sql`
    - `supabase/migrations/0002_payment_slips.sql`
    - `supabase/migrations/0003_tickets.sql`
    - `supabase/migrations/0004_seats.sql`
    - `supabase/migrations/0005_platform.sql` ← multi-event platform (events, profiles, roles; seeds the Bradby event and backfills existing bookings onto it)
+   - `supabase/migrations/0006_event_banner.sql` ← per-event banner image + storage bucket
+   - `supabase/migrations/0007_per_seat_tickets.sql` ← **one ticket/QR per seat** + organizer-issued custom tickets
+
+   > `0007` is required by the current app code. It backfills existing tickets:
+   > each keeps its number and check-in state and adopts its first seat, and the
+   > booking's remaining seats get their own tickets. Until it runs, verifying a
+   > payment and issuing custom tickets will fail.
 3. **Promote yourself to super admin.** Sign up once via `/host/signup` (or create a user in **Authentication → Users**), then run:
 
    ```sql

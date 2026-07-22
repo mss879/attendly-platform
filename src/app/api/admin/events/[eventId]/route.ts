@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getEventAccess } from "@/lib/supabase/auth";
 import { eventDraftSchema } from "@/lib/validation";
 import { draftDateError, draftToRow } from "@/lib/event-draft";
+import { seatingChangeBlocker } from "@/lib/seating";
 
 export async function PATCH(
   request: Request,
@@ -32,19 +33,28 @@ export async function PATCH(
   const supabase = createAdminClient();
   const row = draftToRow(parsed.data);
 
-  // Once seats are booked, the layout and price are locked — attendees have
-  // already paid against them.
-  const { count: bookedCount } = await supabase
+  // Once seats are booked the organizer may still grow the plan, but never
+  // reprice a sold seat or lay out a plan that no longer contains one.
+  const { data: bookedRows, error: bookedError } = await supabase
     .from("booked_seats")
-    .select("id", { count: "exact", head: true })
-    .eq("event_id", event.id);
-  if ((bookedCount ?? 0) > 0) {
-    if (JSON.stringify(row.seating) !== JSON.stringify(event.seating)) {
-      return NextResponse.json(
-        { error: "Seats have already been booked — the seating layout and price can't change." },
-        { status: 409 }
-      );
-    }
+    .select("seat_no")
+    .eq("event_id", event.id)
+    .returns<{ seat_no: string }[]>();
+  if (bookedError) {
+    console.error("[events] booked seat lookup failed:", bookedError);
+    return NextResponse.json(
+      { error: "Could not check existing bookings — please try again." },
+      { status: 500 }
+    );
+  }
+
+  const blocker = seatingChangeBlocker(
+    event.seating,
+    row.seating,
+    (bookedRows ?? []).map((s) => s.seat_no)
+  );
+  if (blocker) {
+    return NextResponse.json({ error: blocker }, { status: 409 });
   }
 
   // Editing a rejected event resubmits it for review.

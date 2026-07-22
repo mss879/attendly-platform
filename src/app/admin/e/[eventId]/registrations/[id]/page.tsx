@@ -4,8 +4,11 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { Avatar } from "@/components/admin/Avatar";
 import { FadeIn } from "@/components/FadeIn";
 import { ReviewButtons } from "@/components/admin/ReviewButtons";
+import { BookingEditor } from "@/components/admin/BookingEditor";
+import { batchYears, portalUrl } from "@/lib/config";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireEventAccess } from "@/lib/supabase/auth";
+import { sortTickets } from "@/lib/tickets";
 import type { PaymentSlip, Registration, Ticket } from "@/lib/types";
 
 const UUID_RE =
@@ -29,7 +32,7 @@ export default async function RegistrationDetailPage({
     .maybeSingle<Registration>();
   if (!registration) notFound();
 
-  const [{ data: slips }, { data: ticket }, { data: seatRows }] =
+  const [{ data: slips }, { data: ticketRows }, { data: seatRows }] =
     await Promise.all([
       supabase
         .from("payment_slips")
@@ -41,7 +44,7 @@ export default async function RegistrationDetailPage({
         .from("tickets")
         .select("*")
         .eq("registration_id", id)
-        .maybeSingle<Ticket>(),
+        .returns<Ticket[]>(),
       supabase
         .from("booked_seats")
         .select("seat_no")
@@ -50,6 +53,21 @@ export default async function RegistrationDetailPage({
         .returns<{ seat_no: string }[]>(),
     ]);
   const seats = (seatRows ?? []).map((s) => s.seat_no);
+  const tickets = sortTickets(ticketRows ?? []);
+  const checkedInSeats = tickets
+    .filter((t) => t.checked_in_at && t.seat_no)
+    .map((t) => t.seat_no as string);
+
+  // Seats held by every OTHER booking on this event — off-limits when
+  // reassigning this one.
+  const { data: eventSeatRows } = await supabase
+    .from("booked_seats")
+    .select("seat_no, registration_id")
+    .eq("event_id", event.id)
+    .returns<{ seat_no: string; registration_id: string }[]>();
+  const otherTakenSeats = (eventSeatRows ?? [])
+    .filter((s) => s.registration_id !== id)
+    .map((s) => s.seat_no);
 
   // Signed URLs so organizers can view files in the private bucket.
   const slipViews = await Promise.all(
@@ -119,14 +137,29 @@ export default async function RegistrationDetailPage({
               </dd>
             </div>
           )}
-          {ticket && (
-            <div className="rounded-xl bg-emerald-50 px-3.5 py-2.5">
-              <dt className="text-xs text-emerald-500">Ticket</dt>
-              <dd className="font-semibold text-emerald-800">
-                {ticket.ticket_number}
-                {ticket.checked_in_at
-                  ? ` · checked in ${new Date(ticket.checked_in_at).toLocaleString()}`
-                  : " · not checked in yet"}
+          {tickets.length > 0 && (
+            <div className="rounded-xl bg-emerald-50 px-3.5 py-2.5 sm:col-span-2">
+              <dt className="text-xs text-emerald-500">
+                {tickets.length === 1
+                  ? "Ticket"
+                  : `Tickets (${tickets.length}) — one QR per seat`}
+              </dt>
+              <dd className="mt-1 space-y-1">
+                {tickets.map((t) => (
+                  <p key={t.id} className="text-sm font-semibold text-emerald-800">
+                    {t.seat_no && (
+                      <span className="mr-2 rounded bg-emerald-100 px-1.5 py-0.5 font-mono text-xs">
+                        {t.seat_no}
+                      </span>
+                    )}
+                    {t.ticket_number}
+                    <span className="font-normal text-emerald-600">
+                      {t.checked_in_at
+                        ? ` · checked in ${new Date(t.checked_in_at).toLocaleString()}`
+                        : " · not checked in yet"}
+                    </span>
+                  </p>
+                ))}
               </dd>
             </div>
           )}
@@ -178,13 +211,49 @@ export default async function RegistrationDetailPage({
         <section className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-black/[0.04] sm:p-6">
           <h2 className="text-base font-bold text-slate-900">Review decision</h2>
           <p className="mb-4 mt-1 text-sm text-slate-500">
-            Verifying issues the ticket and emails the QR code to{" "}
+            Verifying issues one ticket per seat and emails the QR codes to{" "}
             <strong>{registration.email}</strong>. Rejecting asks them to
-            re-upload the slip.
+            re-upload the slip and <strong>keeps their seats held</strong> — to
+            free the seats, cancel the booking below.
           </p>
           <ReviewButtons registrationId={registration.id} />
         </section>
       )}
+
+      <section className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-black/[0.04] sm:p-6">
+        <h2 className="text-base font-bold text-slate-900">
+          Attendee&apos;s ticket page
+        </h2>
+        <p className="mt-1 text-sm text-slate-500">
+          Their personal link — share it if an email doesn&apos;t arrive.
+        </p>
+        <p className="mt-2 break-all rounded-xl bg-slate-50 px-3.5 py-2.5 font-mono text-xs text-slate-700">
+          {portalUrl(registration.access_token)}
+        </p>
+      </section>
+
+      <div>
+        <h2 className="mb-3 text-lg font-bold tracking-tight text-slate-900">
+          Manage this booking
+        </h2>
+        <BookingEditor
+          registrationId={registration.id}
+          eventId={event.id}
+          status={registration.payment_status}
+          seating={event.seating}
+          collectBatch={event.collect_batch}
+          years={batchYears()}
+          initial={{
+            fullName: registration.full_name,
+            email: registration.email,
+            phone: registration.phone,
+            batch: registration.batch,
+          }}
+          currentSeats={seats}
+          otherTakenSeats={otherTakenSeats}
+          checkedInSeats={checkedInSeats}
+        />
+      </div>
     </FadeIn>
   );
 }

@@ -44,7 +44,7 @@ export function EventForm({
 }: {
   mode: "create" | "edit";
   initial?: EventRow;
-  /** True when the event already has bookings — the layout can't change. */
+  /** True when the event already has bookings — the price can't change. */
   seatingLocked?: boolean;
 }) {
   const router = useRouter();
@@ -95,9 +95,16 @@ export function EventForm({
     setError(null);
     setSaved(false);
 
-    const rows = Array.from({ length: Math.min(Math.max(rowCount, 1), 26) }, (_, i) =>
+    const generatedRows = Array.from({ length: Math.min(Math.max(rowCount, 1), 26) }, (_, i) =>
       String.fromCharCode(65 + i)
     );
+    // Keep the stored row letters while the count is unchanged — regenerating
+    // them as A.. would report a phantom seating change on events whose rows
+    // aren't a contiguous A-prefix, tripping the booked-seats edit lock.
+    const rows =
+      initial && initial.seating.rows.length === generatedRows.length
+        ? initial.seating.rows
+        : generatedRows;
     const blocks = blocksText
       .split(",")
       .map((part) => parseInt(part.trim(), 10))
@@ -506,7 +513,10 @@ export function EventForm({
         <h2 className="text-base font-bold text-slate-900">Seating &amp; pricing</h2>
         {seatingLocked && (
           <p className="-mt-2 rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-700 ring-1 ring-amber-100">
-            Seats have already been booked — the layout and price are locked.
+            Seats have already been booked. You can still <strong>grow</strong>{" "}
+            the plan — add rows, add seats per row, move the aisles — but the
+            price is locked and you can&apos;t shrink it below a seat someone
+            has already booked.
           </p>
         )}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -520,7 +530,6 @@ export function EventForm({
               min={1}
               max={26}
               required
-              disabled={seatingLocked}
               className={inputClass}
               value={rowCount}
               onChange={(e) => setRowCount(Number(e.target.value))}
@@ -536,7 +545,6 @@ export function EventForm({
               min={1}
               max={200}
               required
-              disabled={seatingLocked}
               className={inputClass}
               value={seatsPerRow}
               onChange={(e) => setSeatsPerRow(Number(e.target.value))}
@@ -568,7 +576,6 @@ export function EventForm({
               min={1}
               max={50}
               required
-              disabled={seatingLocked}
               className={inputClass}
               value={maxSeats}
               onChange={(e) => setMaxSeats(Number(e.target.value))}
@@ -585,7 +592,6 @@ export function EventForm({
           <input
             id="ev-blocks"
             placeholder="e.g. 20, 35, 20"
-            disabled={seatingLocked}
             className={inputClass}
             value={blocksText}
             onChange={(e) => setBlocksText(e.target.value)}

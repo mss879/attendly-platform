@@ -25,6 +25,7 @@ function participant(t: TicketWithRegistration) {
     name: t.registrations.full_name,
     batch: t.registrations.batch,
     ticketNumber: t.ticket_number,
+    seatNo: t.seat_no,
     checkedInAt: t.checked_in_at,
   };
 }
