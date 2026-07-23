@@ -55,14 +55,22 @@ export default async function PlatformPage() {
 
   return (
     <FadeIn stagger>
-      <div className="mb-7">
-        <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
-          Platform
-        </h1>
-        <p className="mt-0.5 text-sm text-slate-500">
-          Review event applications and keep an eye on everything running on
-          Attendly.
-        </p>
+      <div className="mb-7 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+            Platform
+          </h1>
+          <p className="mt-0.5 text-sm text-slate-500">
+            Review event applications and keep an eye on everything running on
+            Attendly.
+          </p>
+        </div>
+        <Link
+          href="/admin/platform/traffic"
+          className="rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700"
+        >
+          Traffic →
+        </Link>
       </div>
 
       {/* Pending applications */}

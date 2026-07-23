@@ -34,12 +34,20 @@ export default async function MyEventsPage() {
         </div>
         <div className="flex flex-wrap gap-2">
           {isSuperAdmin && (
-            <Link
-              href="/admin/platform"
-              className="rounded-full bg-white px-5 py-2.5 text-sm font-bold text-slate-700 shadow-sm ring-1 ring-black/[0.06] transition hover:-translate-y-0.5 hover:bg-slate-50"
-            >
-              Platform review
-            </Link>
+            <>
+              <Link
+                href="/admin/platform/traffic"
+                className="rounded-full bg-white px-5 py-2.5 text-sm font-bold text-slate-700 shadow-sm ring-1 ring-black/[0.06] transition hover:-translate-y-0.5 hover:bg-slate-50"
+              >
+                Website traffic
+              </Link>
+              <Link
+                href="/admin/platform"
+                className="rounded-full bg-white px-5 py-2.5 text-sm font-bold text-slate-700 shadow-sm ring-1 ring-black/[0.06] transition hover:-translate-y-0.5 hover:bg-slate-50"
+              >
+                Platform review
+              </Link>
+            </>
           )}
           <Link
             href="/admin/events/new"
