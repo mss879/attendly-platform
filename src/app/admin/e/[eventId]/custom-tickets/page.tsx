@@ -3,6 +3,7 @@ import { Avatar } from "@/components/admin/Avatar";
 import { FadeIn } from "@/components/FadeIn";
 import { CustomTicketForm } from "@/components/admin/CustomTicketForm";
 import { batchYears } from "@/lib/config";
+import { formatDate } from "@/lib/event-time";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireEventAccess } from "@/lib/supabase/auth";
 import type { Registration } from "@/lib/types";
@@ -93,7 +94,7 @@ export default async function CustomTicketsPage({
                     </span>
                   </span>
                   <span className="shrink-0 text-xs text-slate-400">
-                    {new Date(r.created_at).toLocaleDateString()}
+                    {formatDate(r.created_at)}
                   </span>
                 </Link>
               </li>

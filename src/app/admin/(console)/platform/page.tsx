@@ -3,7 +3,7 @@ import { FadeIn } from "@/components/FadeIn";
 import { PlatformReviewButtons } from "@/components/admin/PlatformReviewButtons";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireSuperAdmin } from "@/lib/supabase/auth";
-import { eventPhase, formatEventDate } from "@/lib/event-time";
+import { eventPhase, formatDate, formatEventDate } from "@/lib/event-time";
 import { formatLKR } from "@/lib/seating";
 import type { EventRow, Profile } from "@/lib/types";
 
@@ -235,7 +235,7 @@ export default async function PlatformPage() {
                     </span>
                   </td>
                   <td className="px-5 py-3.5 text-xs text-slate-400">
-                    {new Date(profile.created_at).toLocaleDateString()}
+                    {formatDate(profile.created_at)}
                   </td>
                 </tr>
               ))}

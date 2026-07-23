@@ -8,6 +8,7 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { SlipUploadForm } from "@/components/SlipUploadForm";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { formatBatch } from "@/lib/batch";
+import { formatDateTime } from "@/lib/event-time";
 import { formatLKR } from "@/lib/seating";
 import { qrDataUrl } from "@/lib/qr";
 import { sortTickets } from "@/lib/tickets";
@@ -202,7 +203,7 @@ export default async function PortalPage({
                     {ticket.checked_in_at && (
                       <p className="mt-4 rounded-xl bg-emerald-100/80 px-3 py-2 text-sm font-semibold text-emerald-700">
                         ✓ Checked in at{" "}
-                        {new Date(ticket.checked_in_at).toLocaleString()}
+                        {formatDateTime(ticket.checked_in_at)}
                       </p>
                     )}
                   </div>
@@ -227,7 +228,7 @@ export default async function PortalPage({
                   {latestSlip && (
                     <span className="mt-1 block text-xs text-sky-600">
                       Last upload:{" "}
-                      {new Date(latestSlip.uploaded_at).toLocaleString()}
+                      {formatDateTime(latestSlip.uploaded_at)}
                     </span>
                   )}
                 </div>

@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { Scanner, type IDetectedBarcode } from "@yudiel/react-qr-scanner";
+import { formatTime } from "@/lib/event-time";
 
 type ScanResult =
   | {
@@ -147,7 +148,7 @@ export function GateScanner({ eventId }: { eventId: string }) {
               {result.participant.checkedInAt && (
                 <p className="mt-1 text-xs text-red-600">
                   First check-in:{" "}
-                  {new Date(result.participant.checkedInAt).toLocaleTimeString()}
+                  {formatTime(result.participant.checkedInAt)}
                 </p>
               )}
             </>

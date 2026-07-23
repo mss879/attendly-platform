@@ -1,6 +1,7 @@
 import { Avatar } from "@/components/admin/Avatar";
 import { FadeIn } from "@/components/FadeIn";
 import { formatBatch, shortBatch } from "@/lib/batch";
+import { formatDateTime } from "@/lib/event-time";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireEventAccess } from "@/lib/supabase/auth";
 import type { Registration, Ticket } from "@/lib/types";
@@ -105,9 +106,7 @@ export default async function CheckinsPage({
                 </div>
                 <p className="mt-2 text-xs text-slate-500">
                   Checked in{" "}
-                  {t.checked_in_at
-                    ? new Date(t.checked_in_at).toLocaleString()
-                    : "—"}
+                  {t.checked_in_at ? formatDateTime(t.checked_in_at) : "—"}
                 </p>
               </li>
             ))}
@@ -134,9 +133,7 @@ export default async function CheckinsPage({
                     className="border-b border-slate-50 transition last:border-0 hover:bg-orange-50/40"
                   >
                     <td className="px-5 py-3.5 text-slate-500">
-                      {t.checked_in_at
-                        ? new Date(t.checked_in_at).toLocaleString()
-                        : "—"}
+                      {t.checked_in_at ? formatDateTime(t.checked_in_at) : "—"}
                     </td>
                     <td className="px-5 py-3.5">
                       <span className="flex items-center gap-3 font-semibold text-slate-900">

@@ -3,6 +3,7 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { Avatar } from "@/components/admin/Avatar";
 import { FadeIn } from "@/components/FadeIn";
 import { shortBatch } from "@/lib/batch";
+import { formatDateTime } from "@/lib/event-time";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireEventAccess } from "@/lib/supabase/auth";
 import type { PaymentStatus, Registration } from "@/lib/types";
@@ -181,7 +182,7 @@ export default async function RegistrationsPage({
                       <StatusBadge status={r.payment_status as PaymentStatus} />
                     </td>
                     <td className="px-5 py-3.5 text-xs text-slate-400">
-                      {new Date(r.created_at).toLocaleString()}
+                      {formatDateTime(r.created_at)}
                     </td>
                     <td className="px-5 py-3.5 text-right">
                       <Link

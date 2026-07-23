@@ -34,16 +34,35 @@ export function countdownTo(startsAt: string, now: Date = new Date()): Countdown
   };
 }
 
+// All events are in Sri Lanka, so timestamps are pinned to Colombo rather than
+// left to the runtime's zone: server renders (and ISR caches) run in UTC on the
+// host, which would show a 15:45 kick-off as 10:15.
+export const EVENT_TIME_ZONE = "Asia/Colombo";
+
 const DATE_FORMAT: Intl.DateTimeFormatOptions = {
   weekday: "short",
   day: "numeric",
   month: "short",
   year: "numeric",
+  timeZone: EVENT_TIME_ZONE,
 };
 
 const TIME_FORMAT: Intl.DateTimeFormatOptions = {
   hour: "numeric",
   minute: "2-digit",
+  timeZone: EVENT_TIME_ZONE,
+};
+
+const SHORT_DATE_FORMAT: Intl.DateTimeFormatOptions = {
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+  timeZone: EVENT_TIME_ZONE,
+};
+
+const DATE_TIME_FORMAT: Intl.DateTimeFormatOptions = {
+  ...SHORT_DATE_FORMAT,
+  ...TIME_FORMAT,
 };
 
 export function formatEventDate(startsAt: string | null): string {
@@ -51,6 +70,19 @@ export function formatEventDate(startsAt: string | null): string {
   return new Date(startsAt).toLocaleDateString("en-GB", DATE_FORMAT);
 }
 
-export function formatEventTime(startsAt: string): string {
-  return new Date(startsAt).toLocaleTimeString("en-GB", TIME_FORMAT);
+/** Clock time only — kick-off, gate scans. */
+export function formatTime(iso: string): string {
+  return new Date(iso).toLocaleTimeString("en-GB", TIME_FORMAT);
+}
+
+export const formatEventTime = formatTime;
+
+/** Short date, no weekday — record columns like "registered on". */
+export function formatDate(iso: string): string {
+  return new Date(iso).toLocaleDateString("en-GB", SHORT_DATE_FORMAT);
+}
+
+/** Date + time — check-ins, slip uploads, anything audit-trail shaped. */
+export function formatDateTime(iso: string): string {
+  return new Date(iso).toLocaleString("en-GB", DATE_TIME_FORMAT);
 }
