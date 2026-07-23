@@ -7,6 +7,7 @@ import { ReviewButtons } from "@/components/admin/ReviewButtons";
 import { BookingEditor } from "@/components/admin/BookingEditor";
 import { batchYears, portalUrl } from "@/lib/config";
 import { formatBatch } from "@/lib/batch";
+import { formatDateTime } from "@/lib/event-time";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireEventAccess } from "@/lib/supabase/auth";
 import { sortTickets } from "@/lib/tickets";
@@ -127,7 +128,7 @@ export default async function RegistrationDetailPage({
           <div className="rounded-xl bg-slate-50 px-3.5 py-2.5">
             <dt className="text-xs text-slate-400">Registered</dt>
             <dd className="font-semibold text-slate-900">
-              {new Date(registration.created_at).toLocaleString()}
+              {formatDateTime(registration.created_at)}
             </dd>
           </div>
           {seats.length > 0 && (
@@ -158,7 +159,7 @@ export default async function RegistrationDetailPage({
                     {t.ticket_number}
                     <span className="font-normal text-emerald-600">
                       {t.checked_in_at
-                        ? ` · checked in ${new Date(t.checked_in_at).toLocaleString()}`
+                        ? ` · checked in ${formatDateTime(t.checked_in_at)}`
                         : " · not checked in yet"}
                     </span>
                   </p>
@@ -181,7 +182,7 @@ export default async function RegistrationDetailPage({
               <li key={slip.id} className="rounded-xl bg-slate-50 p-3">
                 <p className="mb-2 text-xs text-slate-400">
                   {i === 0 ? "Latest — " : ""}
-                  uploaded {new Date(slip.uploaded_at).toLocaleString()}
+                  uploaded {formatDateTime(slip.uploaded_at)}
                 </p>
                 {!slip.url ? (
                   <p className="text-sm text-red-600">Could not load file.</p>

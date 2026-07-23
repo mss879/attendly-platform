@@ -13,6 +13,12 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "start", "--", "-p", "3001"],
       "port": 3001
+    },
+    {
+      "name": "attendly-prod-utc",
+      "runtimeExecutable": "env",
+      "runtimeArgs": ["TZ=UTC", "npm", "run", "start", "--", "-p", "3002"],
+      "port": 3002
     }
   ]
 }
