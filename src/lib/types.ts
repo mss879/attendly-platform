@@ -110,3 +110,32 @@ export interface Ticket {
   checked_in_at: string | null;
   checked_in_by: string | null;
 }
+
+/** Which page of an event's funnel a view was recorded on. */
+export type TrafficPage = "event" | "book";
+
+/** Per-event rollup from the event_traffic() function. Super admin only. */
+export interface EventTraffic {
+  event_id: string;
+  views: number;
+  visitors: number;
+  book_views: number;
+  views_24h: number;
+  visitors_24h: number;
+  last_view_at: string | null;
+}
+
+/** One Colombo day of an event's views, from event_traffic_daily(). */
+export interface EventTrafficDay {
+  event_id: string;
+  day: string;
+  views: number;
+  visitors: number;
+}
+
+/** Referring host for an event, from event_traffic_referrers(). */
+export interface EventTrafficReferrer {
+  event_id: string;
+  referrer_host: string;
+  views: number;
+}

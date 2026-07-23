@@ -5,6 +5,7 @@ import { AuroraBackground } from "@/components/AuroraBackground";
 import { Logo } from "@/components/Logo";
 import { Footer } from "@/components/Footer";
 import { BookingWizard } from "@/components/book/BookingWizard";
+import { PageViewTracker } from "@/components/events/PageViewTracker";
 import { batchYears } from "@/lib/config";
 import { getEventBySlug } from "@/lib/events";
 import { eventPhase } from "@/lib/event-time";
@@ -66,6 +67,7 @@ export default async function BookPage(props: {
   return (
     <main className="flex flex-1 flex-col p-2">
       <AuroraBackground />
+      <PageViewTracker eventId={event.id} page="book" />
 
       {/* Floating app panel, same shell as the admin dashboard */}
       <div className="flex flex-1 flex-col rounded-2xl bg-[#f7f4f0]/90 shadow-2xl shadow-orange-950/20 ring-1 ring-white/50 backdrop-blur-xl sm:rounded-[28px]">

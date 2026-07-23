@@ -39,6 +39,8 @@ Multi-event ticketing **platform**: organizers apply to host events; attendees b
    - `supabase/migrations/0005_platform.sql` ← multi-event platform (events, profiles, roles; seeds the Bradby event and backfills existing bookings onto it)
    - `supabase/migrations/0006_event_banner.sql` ← per-event banner image + storage bucket
    - `supabase/migrations/0007_per_seat_tickets.sql` ← **one ticket/QR per seat** + organizer-issued custom tickets
+   - `supabase/migrations/0008_non_batch_option.sql` ← per-event "outside the batch" option on the batch field (e.g. "Non RC")
+   - `supabase/migrations/0009_event_traffic.sql` ← event page traffic, visible to the super admin only
 
    > `0007` is required by the current app code. It backfills existing tickets:
    > each keeps its number and check-in state and adopts its first seat, and the
@@ -80,6 +82,8 @@ cp .env.local.example .env.local
 
 Fill in the Supabase URL + keys, Resend key and your public app URL. (The old `EVENT_NAME` / `TICKET_PRICE` / `BANK_*` vars are gone — those now live per event in the database.)
 
+`TRAFFIC_SALT` is optional: it salts the one-way visitor hash used by the traffic dashboard. Leave it unset and the service-role key is used instead. Set it to any long random string if you'd rather keep the two separate — changing it later just means the current day's unique-visitor count restarts.
+
 ### 4. Run
 
 ```bash
@@ -103,4 +107,5 @@ npm run dev
 - **QR reliability:** the QR encodes only a 36-char opaque token (low QR version → large modules), error-correction level Q, 600×600 PNG with a proper quiet zone. Manual ticket-number entry is the gate fallback.
 - **Double-entry protection:** check-in is a single atomic `UPDATE … WHERE checked_in_at IS NULL`, so the same ticket can never check in twice, even from two gates simultaneously. Tickets from other events are rejected at the gate.
 - **Fail-soft email:** if Resend is down or unconfigured, bookings/verifications/approvals still succeed; the personal link is also shown on-screen after booking.
+- **Traffic:** event pages are ISR-cached, so a cached response never runs our code and a server-side counter would miss nearly every visit — views are recorded by a browser beacon posting to `/api/track` instead. That also excludes almost all crawlers, since they don't run JavaScript. Nothing identifying is stored: unique visitors are counted with a salted hash that folds in the UTC date, so it can't follow anyone across days, and only the referrer's *host* is kept (a full referrer URL can carry search terms). Readable by the super admin only — organizers deliberately don't get traffic figures. Aggregation lives in SQL functions (`event_traffic*`) because PostgREST can't express group-by; they're `security invoker`, so RLS filters anyone who calls them directly.
 - **Legacy URLs:** `/book` permanently redirects to the Bradby event's booking page so existing links and emails keep working.
