@@ -9,8 +9,10 @@ export interface Stat {
   value: number;
   href: string;
   badge: string;
+  /** optional muted line under the label, e.g. "of 450 seats" */
+  sub?: string;
   /** pastel gradient wash, like the reference board cards */
-  tone: "violet" | "orange" | "emerald" | "sky";
+  tone: "violet" | "orange" | "emerald" | "sky" | "rose";
 }
 
 const tones = {
@@ -29,6 +31,10 @@ const tones = {
   sky: {
     wash: "radial-gradient(120% 120% at 100% 100%, rgba(56,189,248,0.32) 0%, rgba(255,255,255,0) 55%)",
     badge: "bg-sky-100/80 text-sky-700",
+  },
+  rose: {
+    wash: "radial-gradient(120% 120% at 100% 100%, rgba(251,113,133,0.34) 0%, rgba(255,255,255,0) 55%)",
+    badge: "bg-rose-100/80 text-rose-700",
   },
 } as const;
 
@@ -72,8 +78,12 @@ export function StatCards({ stats }: { stats: Stat[] }) {
     return () => ctx.revert();
   }, [stats]);
 
+  // Keep a single tidy row on wide screens whatever the count (four funnel
+  // cards, or five once "Seats booked" joins them).
+  const xlCols = stats.length >= 5 ? "xl:grid-cols-5" : "xl:grid-cols-4";
+
   return (
-    <div ref={ref} className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div ref={ref} className={`grid gap-4 sm:grid-cols-2 ${xlCols}`}>
       {stats.map((s) => {
         const tone = tones[s.tone];
         return (
@@ -104,6 +114,11 @@ export function StatCards({ stats }: { stats: Stat[] }) {
                 →
               </span>
             </p>
+            {s.sub && (
+              <p className="relative mt-0.5 text-xs font-medium text-slate-400">
+                {s.sub}
+              </p>
+            )}
           </Link>
         );
       })}
