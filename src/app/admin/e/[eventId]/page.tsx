@@ -15,9 +15,15 @@ export default async function EventDashboardPage({
   const supabase = createAdminClient();
   const base = `/admin/e/${event.id}`;
 
-  const [total, awaiting, verified, checkedIn] = await Promise.all([
+  const [total, seatsBooked, awaiting, verified, checkedIn] = await Promise.all([
     supabase
       .from("registrations")
+      .select("id", { count: "exact", head: true })
+      .eq("event_id", event.id),
+    // One booked_seats row per held seat, so this is the true seat count —
+    // a single registration can hold up to maxSeatsPerBooking of them.
+    supabase
+      .from("booked_seats")
       .select("id", { count: "exact", head: true })
       .eq("event_id", event.id),
     supabase
@@ -37,6 +43,9 @@ export default async function EventDashboardPage({
       .not("checked_in_at", "is", null),
   ]);
 
+  // Total seats in this event's plan (rows × seats per row).
+  const capacity = event.seating.rows.length * event.seating.seatsPerRow;
+
   const stats: Stat[] = [
     {
       label: "Total registrations",
@@ -44,6 +53,14 @@ export default async function EventDashboardPage({
       href: `${base}/registrations`,
       badge: "All",
       tone: "violet",
+    },
+    {
+      label: "Seats booked",
+      value: seatsBooked.count ?? 0,
+      sub: `of ${capacity.toLocaleString()} seats`,
+      href: `${base}/registrations`,
+      badge: "Seats",
+      tone: "rose",
     },
     {
       label: "Awaiting review",
